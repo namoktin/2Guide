@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>2Guide - Bản Đồ Tham Quan Di Tích Nhà Tù Hỏa Lò</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Master Stylesheet -->
+  <link rel="stylesheet" href="/css/style.css" />
+
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .user-header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 1000;
+    }
+
+    .user-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .group-badge-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+    }
+
+    .my-hub-tag {
+      font-size: 0.74rem;
+      font-weight: 700;
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid var(--accent-amber);
+      color: var(--accent-amber);
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+
+    .search-bar-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .search-input {
+      flex: 1;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      outline: none;
+    }
+    .search-input:focus {
+      border-color: var(--accent-cyan);
+    }
+
+    .user-map-container {
+      flex: 1;
+      position: relative;
+      height: calc(100vh - 95px);
+      width: 100%;
+    }
+
+    #user-map {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Floor & Route Quick Filters */
+    .floor-filter-bar {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      display: flex;
+      gap: 6px;
+      z-index: 450;
+      background: rgba(19, 27, 46, 0.88);
+      backdrop-filter: blur(8px);
+      padding: 4px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+    }
+
+    .filter-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-secondary);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-btn.active {
+      background: var(--accent-cyan);
+      color: #042f2e;
+      border-color: var(--accent-cyan);
+    }
+
+    /* Floating Quick Actions */
+    .user-fab-container {
+      position: absolute;
+      bottom: 20px;
+      right: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 500;
+    }
+
+    .fab-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: #fff;
+      padding: 9px 13px;
+      border-radius: 30px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .fab-btn:hover {
+      background: var(--bg-hover);
+    }
+    .fab-self {
+      background: var(--accent-amber);
+      color: #000;
+      border-color: #fff;
+    }
+    .fab-self:hover {
+      background: #fbbf24;
+    }
+
+    /* Bottom Sheet POI Detail */
+    .poi-bottom-sheet {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: var(--bg-secondary);
+      border-top: 2px solid var(--accent-amber);
+      border-radius: 16px 16px 0 0;
+      padding: 16px;
+      z-index: 600;
+      box-shadow: 0 -8px 24px rgba(0,0,0,0.6);
+      transform: translateY(100%);
+      transition: transform 0.3s ease;
+      max-height: 55vh;
+      overflow-y: auto;
+    }
+    .poi-bottom-sheet.open {
+      transform: translateY(0);
+    }
+
+    /* Members chip list */
+    .members-scroll-bar {
+      position: absolute;
+      top: 48px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      z-index: 440;
+      padding-bottom: 4px;
+    }
+    .member-chip {
+      background: rgba(19, 27, 46, 0.9);
+      backdrop-filter: blur(6px);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .member-chip.active-self {
+      border-color: var(--accent-amber);
+      color: var(--accent-amber);
+      background: rgba(245, 158, 11, 0.15);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- BANNER PHÁT THANH KHẨN CẤP TỪ BAN QUẢN LÝ -->
+  <div id="emergency-banner" class="emergency-banner">
+    <span id="emergency-banner-text">THÔNG BÁO TỪ BAN QUẢN LÝ</span>
+  </div>
+
+  <!-- HEADER DÀNH CHO USER -->
+  <header class="user-header">
+    <div class="user-top-row">
+      <div>
+        <span class="group-badge-title" id="display-group-name">Đoàn Tham Quan</span>
+        <span style="font-size: 0.72rem; color: var(--text-dim);" id="display-site-name"> | Nhà Tù Hỏa Lò</span>
+      </div>
+      <div style="display: flex; gap: 6px; align-items: center;">
+        <button id="btn-show-my-qr" class="btn btn-secondary btn-sm" style="padding: 3px 8px; font-size: 0.72rem;">
+          Mã QR Của Đoàn
+        </button>
+        <div id="btn-change-my-hub" class="my-hub-tag">
+          Hub: <span id="display-my-hub-id">Chưa chọn</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- THANH TÌM KIẾM THÀNH VIÊN TRONG ĐOÀN BẰNG ID HUB -->
+    <div class="search-bar-row">
+      <input type="text" id="input-search-hub" class="search-input" placeholder="Nhập ID HUB tìm người trong đoàn (ví dụ: NHL002)..." />
+      <button id="btn-search-hub" class="btn btn-primary btn-sm">Tìm</button>
+    </div>
+  </header>
+
+  <!-- BẢN ĐỒ USER CHÍNH -->
+  <main class="user-map-container">
+    <div id="user-map"></div>
+
+    <!-- THANH LỌC MẶT BẰNG & TUYẾN THAM QUAN -->
+    <div class="floor-filter-bar">
+      <button class="filter-btn active" data-filter="all">Tất Cả (20 Điểm)</button>
+      <button class="filter-btn" data-filter="floor-1">Tầng 1 (1 - 15)</button>
+      <button class="filter-btn" data-filter="floor-2">Tầng 2 (16 - 20)</button>
+      <button class="filter-btn" id="btn-toggle-tour-route">Tuyến Tham Quan</button>
+    </div>
+
+    <!-- THANH DANH SÁCH THÀNH VIÊN CUỘN NGANG -->
+    <div class="members-scroll-bar" id="members-list-bar">
+      <!-- Render các chip thành viên -->
+    </div>
+
+    <!-- NÚT ĐIỀU HƯỚNG NHANH -->
+    <div class="user-fab-container">
+      <button id="btn-locate-self" class="fab-btn fab-self">
+        Vị Trí Của Tôi
+      </button>
+      <button id="btn-fit-group" class="fab-btn">
+        Xem Cả Đoàn
+      </button>
+    </div>
+
+    <!-- BOTTOM SHEET CHI TIẾT ĐIỂM DI TÍCH POI -->
+    <div id="poi-sheet" class="poi-bottom-sheet">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+        <div>
+          <h3 id="sheet-poi-title" style="color: var(--accent-amber); font-size: 1.05rem; margin: 0;">1. Cổng chính</h3>
+          <div id="sheet-poi-zone" style="font-size: 0.74rem; color: var(--accent-cyan); text-transform: uppercase;">Khu Đón Tiếp</div>
+        </div>
+        <button id="btn-close-poi-sheet" class="btn btn-secondary btn-sm" style="padding: 2px 8px;">Đóng</button>
+      </div>
+
+      <p id="sheet-poi-desc" style="font-size: 0.84rem; color: var(--text-secondary); margin: 10px 0; line-height: 1.5;">
+        Mô tả lịch sử điểm di tích...
+      </p>
+
+      <button id="btn-play-poi-audio" class="btn btn-primary btn-block">
+        Nghe Thuyết Minh Âm Thanh
+      </button>
+    </div>
+  </main>
+
+  <!-- MODAL BẮT BUỘC: CHỌN SỐ ID HUB CỦA BẠN (THEO THIẾT KẾ UX) -->
+  <div id="modal-select-hub" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-title">Xác Nhận Thiết Bị Của Bạn</div>
+      <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">
+        Vui lòng chọn hoặc nhập số ID HUB bạn đang cầm trên tay để hệ thống hiển thị vị trí của bạn bằng <strong>icon ghim vàng (BẠN)</strong>:
+      </p>
+
+      <div class="form-group" style="text-align: left;">
+        <label class="form-label">Chọn nhanh từ danh sách Hub của đoàn bạn:</label>
+        <div id="hub-options-grid" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+          <!-- Render danh sách Hub -->
+        </div>
+      </div>
+
+      <div class="form-group" style="text-align: left;">
+        <label class="form-label">Hoặc tự gõ mã Hub ID của bạn:</label>
+        <input type="text" id="input-manual-hub-id" class="form-control" placeholder="Ví dụ: NHL001" />
+      </div>
+
+      <button id="btn-confirm-my-hub" class="btn btn-primary btn-block" style="margin-top: 10px;">
+        Bắt Đầu Xem Bản Đồ Đoàn
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL XEM MÃ QR CỦA CHÍNH ĐOÀN MÌNH -->
+  <div id="modal-group-qr" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-title">Mã QR Đoàn Của Bạn</div>
+      <p style="font-size: 0.78rem; color: var(--text-dim); margin-bottom: 8px;">
+        Đưa mã này cho bạn bè, người thân trong cùng đoàn quét camera để cùng vào bản đồ định vị:
+      </p>
+
+      <div class="qr-preview-box">
+        <img id="my-group-qr-img" class="qr-image" src="" alt="Mã QR Đoàn Của Bạn" />
+      </div>
+
+      <div id="my-group-qr-info" style="font-size: 0.8rem; color: var(--accent-cyan); margin-bottom: 12px;">
+        Đoàn: <strong>---</strong>
+      </div>
+
+      <button id="btn-close-my-group-qr" class="btn btn-primary btn-block">Đóng</button>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/js/map-common.js"></script>
+  <script src="/js/user.js"></script>
+</body>
+</html>

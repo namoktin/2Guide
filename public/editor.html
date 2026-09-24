@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2Guide - Studio Biên Tập Bản Đồ Di Tích & Tuyến Tham Quan</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Master Stylesheet -->
+  <link rel="stylesheet" href="/css/style.css" />
+
+  <style>
+    .editor-layout {
+      display: flex;
+      height: calc(100vh - 54px);
+      width: 100vw;
+      position: relative;
+    }
+
+    .editor-sidebar {
+      width: 380px;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      z-index: 500;
+      overflow-y: auto;
+      padding: 12px;
+      gap: 12px;
+    }
+
+    .mode-selector-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .mode-btn {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 8px 4px;
+      border-radius: var(--radius-sm);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .mode-btn:hover {
+      background: var(--bg-hover);
+      color: #fff;
+    }
+    .mode-btn.active {
+      background: rgba(6, 182, 212, 0.15);
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+
+    .coord-statusbar {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(6px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 4px 10px;
+      font-size: 0.72rem;
+      font-family: monospace;
+      color: var(--accent-cyan);
+      z-index: 450;
+    }
+
+    .drawing-hint-banner {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(19, 27, 46, 0.92);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--accent-amber);
+      color: var(--accent-amber);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      z-index: 450;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+    }
+
+    .list-scrollable {
+      max-height: 200px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .edit-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      padding: 5px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 0.76rem;
+      cursor: pointer;
+    }
+    .edit-item-row:hover {
+      border-color: var(--accent-cyan);
+    }
+    .edit-item-row.selected {
+      border-color: var(--accent-amber);
+      background: rgba(245, 158, 11, 0.1);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- THANH ĐIỀU HƯỚNG TRÊN CÙNG -->
+  <header class="top-navbar">
+    <div class="brand-section">
+      <span class="brand-badge">2GUIDE STUDIO</span>
+      <span class="brand-title">BIÊN TẬP BẢN ĐỒ DI TÍCH & TUYẾN THAM QUAN</span>
+    </div>
+
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <button id="btn-save-server" class="btn btn-success btn-sm">
+        Lưu Vào Hệ Thống
+      </button>
+      <button id="btn-export-json" class="btn btn-secondary btn-sm">
+        Xuất File JSON
+      </button>
+      <button id="btn-reset-default" class="btn btn-secondary btn-sm" title="Khôi phục dữ liệu gốc Nhà tù Hỏa Lò">
+        Khôi Phục Gốc
+      </button>
+      <a href="/index.html" class="nav-link">Trung Tâm BQL</a>
+      <a href="/user.html" class="nav-link" target="_blank">Cổng Khách</a>
+    </div>
+  </header>
+
+  <!-- GIAO DIỆN BIÊN TẬP CHÍNH -->
+  <main class="editor-layout">
+
+    <!-- CỘT CÔNG CỤ BÊN TRÁI -->
+    <aside class="editor-sidebar">
+
+      <!-- CHỌN CHẾ ĐỘ BIÊN TẬP -->
+      <div class="card-section">
+        <div class="section-header">
+          <span>Chế Độ Biên Tập</span>
+        </div>
+        
+        <div class="mode-selector-grid">
+          <button class="mode-btn active" data-mode="poi">
+            <span>[+] ĐIỂM POI</span>
+            <small style="font-weight: normal; font-size: 0.65rem;">Kéo thả / Thêm</small>
+          </button>
+          <button class="mode-btn" data-mode="zone">
+            <span>[+] VÙNG PHÂN KHU</span>
+            <small style="font-weight: normal; font-size: 0.65rem;">Vẽ đa giác</small>
+          </button>
+          <button class="mode-btn" data-mode="route">
+            <span>[+] TUYẾN ĐƯỜNG</span>
+            <small style="font-weight: normal; font-size: 0.65rem;">Vẽ đường nối</small>
+          </button>
+        </div>
+      </div>
+
+      <!-- ==============================================
+           PANEL 1: BIÊN TẬP ĐIỂM DI TÍCH (POI)
+           ============================================== -->
+      <div id="panel-poi" class="editor-panel">
+        <div class="card-section">
+          <div class="section-header">
+            <span>Thông Tin Điểm Di Tích (POI)</span>
+            <button id="btn-add-poi-mode" class="btn btn-primary btn-sm">+ Thêm Điểm Mới</button>
+          </div>
+
+          <div style="font-size: 0.74rem; color: var(--text-dim); margin-bottom: 8px;">
+            Mẹo: Bấm lên bản đồ để đặt điểm mới, hoặc <strong>kéo thả trực tiếp bất kỳ ghim nào</strong> để di dời vị trí tức thì.
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Số Thứ Tự & Tên Điểm:</label>
+            <div style="display: flex; gap: 6px;">
+              <input type="number" id="input-poi-number" class="form-control" style="width: 70px;" value="1" min="1" max="100" />
+              <input type="text" id="input-poi-name" class="form-control" placeholder="Tên điểm tham quan..." />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tên Tiếng Pháp / Anh (nếu có):</label>
+            <input type="text" id="input-poi-french" class="form-control" placeholder="Nom en français..." />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Phân Khu & Mặt Bằng:</label>
+            <div style="display: flex; gap: 6px;">
+              <input type="text" id="input-poi-zone" class="form-control" placeholder="Khu vực..." value="Khu Trưng Bày" />
+              <select id="select-poi-floor" class="form-control" style="width: 110px;">
+                <option value="1">Tầng 1</option>
+                <option value="2">Tầng 2</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tọa Độ (Lat, Lng):</label>
+            <div style="display: flex; gap: 6px;">
+              <input type="number" id="input-poi-lat" class="form-control" step="0.000001" placeholder="Vĩ độ Lat" />
+              <input type="number" id="input-poi-lng" class="form-control" step="0.000001" placeholder="Kinh độ Lng" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Mô Tả Lịch Sử Tóm Tắt:</label>
+            <textarea id="input-poi-desc" class="form-control" rows="2" placeholder="Nội dung giới thiệu lịch sử điểm này..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Lời Thuyết Minh Âm Thanh (Audio Guide):</label>
+            <textarea id="input-poi-audio" class="form-control" rows="2" placeholder="Nội dung tự động đọc phát thanh cho du khách..."></textarea>
+          </div>
+
+          <div style="display: flex; gap: 6px; margin-top: 10px;">
+            <button id="btn-update-poi" class="btn btn-primary btn-sm" style="flex: 1;">Cập Nhật Điểm</button>
+            <button id="btn-delete-poi" class="btn btn-danger btn-sm" style="flex: 1;">Xóa Điểm Này</button>
+          </div>
+        </div>
+
+        <div class="card-section">
+          <div class="section-header">
+            <span>Danh Sách 20 Điểm POI (<span id="count-poi-display">0</span>)</span>
+          </div>
+          <div id="list-all-pois" class="list-scrollable">
+            <!-- Render danh sách POIs -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ==============================================
+           PANEL 2: VẼ VÙNG PHÂN KHU (POLYGON ZONES)
+           ============================================== -->
+      <div id="panel-zone" class="editor-panel" style="display: none;">
+        <div class="card-section">
+          <div class="section-header">
+            <span>Tạo Vùng Phân Khu (Polygon)</span>
+          </div>
+
+          <div style="font-size: 0.74rem; color: var(--text-dim); margin-bottom: 8px;">
+            Bấm liên tiếp lên bản đồ để đánh dấu các đỉnh của ranh giới khu vực. Bấm "Khép Kín Vùng" để hoàn tất.
+          </div>
+
+          <div style="display: flex; gap: 6px; margin-bottom: 10px;">
+            <button id="btn-start-zone-draw" class="btn btn-primary btn-sm" style="flex: 1;">Bắt Đầu Vẽ Vùng</button>
+            <button id="btn-finish-zone-draw" class="btn btn-success btn-sm" style="flex: 1;">Khép Kín Vùng</button>
+            <button id="btn-cancel-zone-draw" class="btn btn-secondary btn-sm">Hủy</button>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tên Phân Khu Đầy Đủ:</label>
+            <input type="text" id="input-zone-name" class="form-control" placeholder="Ví dụ: Khu Trại Giam Nam & Ngục Tối" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tên Viết Tắt (Hiện Nhãn Trên Map):</label>
+            <input type="text" id="input-zone-short" class="form-control" placeholder="Ví dụ: Trại Giam Nam" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Màu Sắc Đại Diện & Tầng:</label>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <input type="color" id="input-zone-color" value="#3b82f6" style="width: 44px; height: 32px; border: 1px solid var(--border-color); background: none; cursor: pointer; border-radius: 4px;" />
+              <select id="select-zone-floor" class="form-control" style="flex: 1;">
+                <option value="1">Mặt bằng Tầng 1</option>
+                <option value="2">Mặt bằng Tầng 2</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 6px; margin-top: 10px;">
+            <button id="btn-update-zone" class="btn btn-primary btn-sm" style="flex: 1;">Lưu Vùng Phân Khu</button>
+            <button id="btn-delete-zone" class="btn btn-danger btn-sm" style="flex: 1;">Xóa Vùng Này</button>
+          </div>
+        </div>
+
+        <div class="card-section">
+          <div class="section-header">
+            <span>Danh Sách Phân Khu (<span id="count-zone-display">0</span>)</span>
+          </div>
+          <div id="list-all-zones" class="list-scrollable">
+            <!-- Render danh sách zones -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ==============================================
+           PANEL 3: VẼ TUYẾN ĐƯỜNG THAM QUAN (TOUR ROUTE)
+           ============================================== -->
+      <div id="panel-route" class="editor-panel" style="display: none;">
+        <div class="card-section">
+          <div class="section-header">
+            <span>Tuyến Đường Tham Quan (Polyline)</span>
+          </div>
+
+          <p style="font-size: 0.74rem; color: var(--text-dim); margin-bottom: 8px;">
+            Đường hướng dẫn du khách đi tuần tự qua các phòng và sân trong di tích.
+          </p>
+
+          <button id="btn-auto-connect-route" class="btn btn-primary btn-block btn-sm" style="margin-bottom: 8px;">
+            Tự Động Nối Theo 20 Điểm POI (1 -> 20)
+          </button>
+
+          <div style="display: flex; gap: 6px; margin-bottom: 10px;">
+            <button id="btn-start-route-draw" class="btn btn-secondary btn-sm" style="flex: 1;">Bấm Thêm Nút Điểm</button>
+            <button id="btn-clear-route" class="btn btn-danger btn-sm">Xóa Tuyến</button>
+          </div>
+
+          <div style="font-size: 0.76rem; color: var(--text-secondary);">
+            Số điểm nút trên tuyến: <strong id="route-points-count" style="color: var(--accent-amber);">0</strong> điểm.
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- BẢN ĐỒ CANVAS GOOGLE MAPS -->
+    <section class="map-wrapper">
+      <div id="editor-map" style="width: 100%; height: 100%;"></div>
+
+      <!-- BANNER NHẮC NHỞ TRẠNG THÁI -->
+      <div id="drawing-hint" class="drawing-hint-banner" style="display: none;">
+        Đang vẽ...
+      </div>
+
+      <!-- THANH TRẠNG THÁI TỌA ĐỘ CON TRỎ -->
+      <div id="coord-status" class="coord-statusbar">
+        Lat: 21.02534 | Lng: 105.84655 | Zoom: 19
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/js/map-common.js"></script>
+  <script src="/js/editor.js"></script>
+</body>
+</html>
