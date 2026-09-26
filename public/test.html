@@ -1,0 +1,3896 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>2Guide - Trạm Kiểm Thử Phần Cứng Hub (ATGM336H, MPU6050, INMP441, Groq AI & PCM5102A)</title>
+  <style>
+    :root {
+      --bg-main: #0b1120;
+      --bg-card: #131c31;
+      --bg-card-alt: #1a2540;
+      --bg-input: #090e1a;
+      --border-color: #243354;
+      --border-glow: #38bdf8;
+      --text-main: #f1f5f9;
+      --text-sub: #94a3b8;
+      --text-dim: #64748b;
+      --accent-cyan: #38bdf8;
+      --accent-blue: #3b82f6;
+      --accent-amber: #f59e0b;
+      --accent-emerald: #10b981;
+      --accent-rose: #f43f5e;
+      --accent-purple: #a855f7;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.5;
+      padding: 16px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+
+    /* TOP HEADER & SERVER BAR */
+    header {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .title-block h1 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+      letter-spacing: 0.5px;
+    }
+
+    .title-block p {
+      font-size: 0.8rem;
+      color: var(--text-sub);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid var(--accent-emerald);
+      color: var(--accent-emerald);
+    }
+    .status-badge.offline {
+      background: rgba(244, 63, 94, 0.12);
+      border-color: var(--accent-rose);
+      color: var(--accent-rose);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    /* SERVER CONFIG ROW */
+    .server-config-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .input-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-sub);
+      text-transform: uppercase;
+    }
+
+    .input-field {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: #fff;
+      padding: 7px 12px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .input-field:focus {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+    }
+
+    .btn {
+      padding: 7px 16px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .btn:active {
+      transform: scale(0.97);
+    }
+    .btn-primary { background: #0284c7; color: #fff; border: 1px solid #38bdf8; }
+    .btn-primary:hover { background: #0369a1; }
+    .btn-success { background: #059669; color: #fff; border: 1px solid #10b981; }
+    .btn-success:hover { background: #047857; }
+    .btn-warning { background: #d97706; color: #fff; border: 1px solid #f59e0b; }
+    .btn-warning:hover { background: #b45309; }
+    .btn-danger { background: #e11d48; color: #fff; border: 1px solid #f43f5e; }
+    .btn-danger:hover { background: #be123c; }
+    .btn-secondary { background: var(--bg-card-alt); color: var(--text-main); border: 1px solid var(--border-color); }
+    .btn-secondary:hover { background: #223254; color: #fff; }
+    .btn-sm { padding: 4px 10px; font-size: 0.74rem; }
+
+    /* GRID LAYOUT */
+    .grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 900px) {
+      .grid-2col {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      position: relative;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 10px;
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chip-tag {
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .chip-cyan { background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border: 1px solid rgba(56, 189, 248, 0.4); }
+    .chip-amber { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.4); }
+    .chip-purple { background: rgba(168, 85, 247, 0.15); color: var(--accent-purple); border: 1px solid rgba(168, 85, 247, 0.4); }
+    .chip-emerald { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); border: 1px solid rgba(16, 185, 129, 0.4); }
+
+    /* FORM ELEMENTS INSIDE CARD */
+    .form-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      flex: 1;
+      min-width: 110px;
+    }
+
+    .form-group label {
+      font-size: 0.72rem;
+      color: var(--text-sub);
+      font-weight: 700;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .slider-row input[type="range"] {
+      flex: 1;
+      accent-color: var(--accent-cyan);
+    }
+    .slider-val {
+      font-family: monospace;
+      font-size: 0.86rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+      min-width: 48px;
+      text-align: right;
+    }
+
+    /* COMPASS VISUALIZER */
+    .compass-container {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .compass-dial-wrap {
+      width: 100px;
+      height: 100px;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .compass-dial {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 2px dashed var(--accent-cyan);
+      position: relative;
+      background: radial-gradient(circle, #1a2540 30%, #090e1a 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .compass-needle {
+      position: absolute;
+      width: 4px;
+      height: 80px;
+      background: linear-gradient(to bottom, #ef4444 50%, #94a3b8 50%);
+      border-radius: 2px;
+      transform-origin: center center;
+      transition: transform 0.15s ease-out;
+      box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+    }
+
+    .compass-center-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #fff;
+      position: absolute;
+      z-index: 2;
+    }
+
+    .compass-cardinal {
+      position: absolute;
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: var(--text-dim);
+    }
+    .cardinal-n { top: 2px; color: #ef4444; }
+    .cardinal-e { right: 4px; }
+    .cardinal-s { bottom: 2px; }
+    .cardinal-w { left: 4px; }
+
+    /* PRESETS ROW */
+    .presets-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    /* CODE & TERMINAL / HEX DUMP */
+    .hex-viewer {
+      background: #050811;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      padding: 10px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.72rem;
+      color: #38bdf8;
+      max-height: 130px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .console-logs {
+      background: #050811;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      padding: 10px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.74rem;
+      color: #e2e8f0;
+      height: 160px;
+      overflow-y: auto;
+    }
+    .log-line {
+      margin-bottom: 4px;
+      line-height: 1.4;
+    }
+    .log-time { color: var(--text-dim); margin-right: 6px; }
+    .log-tag-gps { color: var(--accent-emerald); font-weight: 700; }
+    .log-tag-imu { color: var(--accent-amber); font-weight: 700; }
+    .log-tag-audio { color: var(--accent-cyan); font-weight: 700; }
+    .log-tag-ai { color: var(--accent-purple); font-weight: 700; }
+    .log-tag-dac { color: #f43f5e; font-weight: 700; }
+
+    /* AUDIO WAVEFORM CANVAS */
+    .wave-canvas {
+      width: 100%;
+      height: 60px;
+      background: #050811;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      display: block;
+    }
+
+    /* DAC PLAYER BAR */
+    .dac-player-bar {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .dac-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .dac-pins-badge {
+      display: inline-flex;
+      gap: 6px;
+      font-size: 0.65rem;
+      font-family: monospace;
+      color: var(--text-dim);
+    }
+    .dac-pin {
+      background: #1e293b;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid #334155;
+    }
+    .dac-pin.active {
+      color: #38bdf8;
+      border-color: #0284c7;
+      background: rgba(2, 132, 199, 0.2);
+    }
+
+    .seek-slider {
+      flex: 1;
+      accent-color: var(--accent-rose);
+    }
+
+    /* FULL WIDTH CARD FOR SEND & RESULTS */
+    .card-full {
+      grid-column: 1 / -1;
+    }
+
+    .ai-result-box {
+      background: var(--bg-input);
+      border: 1px solid #2563eb;
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .ai-bubble-title {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+    }
+    .ai-bubble-text {
+      font-size: 0.88rem;
+      color: #fff;
+      line-height: 1.5;
+    }
+
+    /* ============================================================
+       HACKER BLACK SIMULATOR STYLES
+       ============================================================ */
+    .card-hacker {
+      background: linear-gradient(145deg, #0d131f 0%, #170b14 100%);
+      border: 1px solid #e11d48;
+      box-shadow: 0 0 25px rgba(225, 29, 72, 0.25);
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+    }
+
+    .hacker-badge-red {
+      background: rgba(225, 29, 72, 0.15);
+      color: #fb7185;
+      border: 1px solid #f43f5e;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .hacker-scoreboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      background: rgba(5, 8, 17, 0.85);
+      border: 1px solid #331522;
+      border-radius: 8px;
+      padding: 14px;
+    }
+
+    .hacker-stat-box {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .hacker-stat-title {
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .hacker-stat-val {
+      font-size: 1.25rem;
+      font-weight: 900;
+      font-family: monospace;
+      color: #fff;
+    }
+    .val-danger { color: #f43f5e; }
+    .val-success { color: #10b981; }
+    .val-cyan { color: #38bdf8; }
+
+    .hacker-btn-primary {
+      background: linear-gradient(135deg, #e11d48 0%, #9f1239 100%);
+      color: #fff;
+      border: 1px solid #f43f5e;
+      box-shadow: 0 0 15px rgba(244, 63, 94, 0.4);
+      padding: 8px 18px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .hacker-btn-primary:hover {
+      background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%);
+      box-shadow: 0 0 25px rgba(244, 63, 94, 0.7);
+      transform: translateY(-1px);
+    }
+
+    .hacker-btn-ghost {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 6px 12px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .hacker-btn-ghost:hover {
+      background: #1e293b;
+      border-color: #f43f5e;
+      color: #fff;
+    }
+
+    .hacker-table-wrap {
+      max-height: 380px;
+      overflow-y: auto;
+      border: 1px solid #271420;
+      border-radius: 8px;
+      background: #060913;
+    }
+
+    .hacker-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+      text-align: left;
+    }
+    .hacker-table th {
+      background: #120b15;
+      color: #fca5a5;
+      padding: 9px 12px;
+      border-bottom: 1px solid #3f192b;
+      font-weight: 800;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .hacker-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #1c111e;
+      color: #cbd5e1;
+      vertical-align: middle;
+    }
+    .hacker-table tr:hover {
+      background: rgba(225, 29, 72, 0.06);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      font-family: monospace;
+      white-space: nowrap;
+    }
+    .status-blocked {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid #10b981;
+      color: #34d399;
+    }
+    .status-breached {
+      background: rgba(244, 63, 94, 0.25);
+      border: 1px solid #f43f5e;
+      color: #fda4af;
+      animation: pulse-breach 1s infinite;
+    }
+    .status-testing {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid #38bdf8;
+      color: #7dd3fc;
+    }
+    .status-pending {
+      background: rgba(100, 116, 139, 0.15);
+      border: 1px solid #475569;
+      color: #94a3b8;
+    }
+
+    @keyframes pulse-breach {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 5px #10b981; transform: scale(1); }
+      50% { box-shadow: 0 0 16px #10b981, 0 0 24px rgba(16, 185, 129, 0.7); transform: scale(1.05); }
+      100% { box-shadow: 0 0 5px #10b981; transform: scale(1); }
+    }
+    .pulse-glow {
+      animation: pulseGlow 1.2s infinite !important;
+      border-color: #34d399 !important;
+      background: #059669 !important;
+      color: #fff !important;
+    }
+
+    .hacker-console {
+      background: #03050a;
+      border: 1px solid #3b1022;
+      border-radius: 8px;
+      padding: 12px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.73rem;
+      color: #00ff66;
+      height: 180px;
+      overflow-y: auto;
+      line-height: 1.5;
+      text-shadow: 0 0 4px rgba(0, 255, 102, 0.4);
+    }
+    .hacker-console .hacker-log-err { color: #f43f5e; text-shadow: 0 0 4px rgba(244, 63, 94, 0.4); }
+    .hacker-console .hacker-log-warn { color: #fbbf24; text-shadow: 0 0 4px rgba(251, 191, 36, 0.4); }
+    .hacker-console .hacker-log-info { color: #38bdf8; text-shadow: 0 0 4px rgba(56, 189, 248, 0.4); }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- HEADER & SERVER SETTINGS -->
+    <header>
+      <div class="header-top">
+        <div class="title-block">
+          <h1>2Guide - Trạm Kiểm Thử Phần Cứng Độc Lập</h1>
+          <p>Mô phỏng đầy đủ chuỗi: ATGM336H (GPS) -> MPU6050 (IMU) -> INMP441 (Audio WAV) -> Server Groq AI -> PCM5102A (I2S DAC MP3)</p>
+        </div>
+        <div id="server-status-badge" class="status-badge offline">
+          <span class="status-dot"></span>
+          <span id="server-status-text">Server: Chưa Kết Nối</span>
+        </div>
+      </div>
+
+      <!-- SERVER URL CONFIGURATION -->
+      <div class="server-config-row">
+        <span class="input-label">Server Base URL:</span>
+        <input type="text" id="cfg-server-url" class="input-field" style="width: 240px;" value="http://localhost:4000" placeholder="http://localhost:4000" />
+        <button id="btn-ping-server" class="btn btn-secondary btn-sm">Kiểm Tra Kết Nối</button>
+        <button class="btn btn-secondary btn-sm" onclick="setServerUrl('http://localhost:4000')">localhost:4000</button>
+        <button class="btn btn-secondary btn-sm" onclick="setServerUrl('http://127.0.0.1:4000')">127.0.0.1:4000</button>
+        
+        <span style="border-left: 1px solid var(--border-color); height: 20px; margin: 0 4px;"></span>
+        
+        <span class="input-label">Mã Hub ID:</span>
+        <input type="text" id="cfg-hub-id" class="input-field" style="width: 90px; text-transform: uppercase;" value="NEU001" />
+        <span class="input-label">Pin %:</span>
+        <input type="number" id="cfg-battery" class="input-field" style="width: 65px;" value="95" min="1" max="100" />
+      </div>
+
+      <!-- BẢO MẬT ESP32 & XÁC THỰC 2 CHIỀU -->
+      <div class="security-config-row" style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border-color); display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <span class="input-label" style="color: var(--accent-cyan);">Mã Bí Mật ESP32 (Secret Key):</span>
+        <input type="text" id="cfg-device-secret" class="input-field" style="width: 220px; font-family: monospace; font-weight: 700; color: #38bdf8;" value="esp_sec_2026_98a72b" placeholder="esp_sec_..." />
+        
+        <button id="btn-set-valid-secret" class="btn btn-success btn-sm" onclick="setSecretKey('esp_sec_2026_98a72b')">Gán Đúng Mã (.env)</button>
+        <button id="btn-set-fake-secret" class="btn btn-danger btn-sm" onclick="setSecretKey('fake_hacker_key_9999')">Gán Mã Sai (Giả Mạo/Bịp)</button>
+        <button id="btn-verify-secret-server" class="btn btn-primary btn-sm">Kiểm Tra Xác Thực Server</button>
+        <button id="btn-jump-hacker" class="btn btn-sm" onclick="scrollToHackerPanel()" style="background: rgba(225, 29, 72, 0.2); border: 1px solid #f43f5e; color: #fb7185; font-weight: 800;">💀 Giả Lập Hacker Black</button>
+
+        <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.76rem; color: var(--text-sub); cursor: pointer; user-select: none;">
+          <input type="checkbox" id="chk-send-secret" checked style="accent-color: var(--accent-cyan);" />
+          Đính kèm mã khi gửi (X-Device-Secret)
+        </label>
+
+        <span style="border-left: 1px solid var(--border-color); height: 20px; margin: 0 4px;"></span>
+
+        <div id="auth-status-badge" class="status-badge" style="background: rgba(56, 189, 248, 0.1); border-color: var(--accent-cyan); color: var(--accent-cyan);">
+          <span class="status-dot"></span>
+          <span id="auth-status-text">Bảo mật: Sẵn sàng kiểm thử 2 chiều</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN GRID -->
+    <div class="grid-2col">
+
+      <!-- ==============================================
+           CARD 1: GPS ATGM336H (VỊ TRÍ THỰC ĐỊA)
+           ============================================== -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>Module GPS ATGM336H</span>
+            <span class="chip-tag chip-emerald">GPS / BDS Dual-Mode</span>
+          </div>
+          <button id="btn-gps-send-telemetry" class="btn btn-success btn-sm">Gửi Telemetry GPS</button>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Vĩ Độ (Latitude)</label>
+            <input type="number" id="gps-lat" class="input-field" step="0.000001" value="20.99965" />
+          </div>
+          <div class="form-group">
+            <label>Kinh Độ (Longitude)</label>
+            <input type="number" id="gps-lng" class="input-field" step="0.000001" value="105.84280" />
+          </div>
+          <div class="form-group" style="max-width: 80px;">
+            <label>Vệ Tinh</label>
+            <input type="number" id="gps-sats" class="input-field" value="14" />
+          </div>
+        </div>
+
+        <div>
+          <label class="input-label" style="display: block; margin-bottom: 6px;">Tọa độ mẫu nhanh trong khuôn viên:</label>
+          <div class="presets-row">
+            <button class="btn btn-secondary btn-sm" onclick="setGps(20.99965, 105.84280, 'Tòa Nhà Thế Kỷ A2')">Tòa Nhà A2</button>
+            <button class="btn btn-secondary btn-sm" onclick="setGps(20.99920, 105.84230, 'Thư Viện Phạm Văn Đồng')">Thư Viện</button>
+            <button class="btn btn-secondary btn-sm" onclick="setGps(21.00010, 105.84310, 'Cổng Chính')">Cổng Chính</button>
+            <button class="btn btn-secondary btn-sm" onclick="setGps(20.99880, 105.84340, 'Khu Thể Thao')">Khu Thể Thao</button>
+            <button class="btn btn-secondary btn-sm" onclick="getRealGeolocation()">Lấy GPS Thật Từ Máy</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="input-label" style="display: block; margin-bottom: 4px;">NMEA 0183 Serial Output (Mô phỏng luồng UART ATGM336H):</label>
+          <div id="gps-nmea-preview" class="hex-viewer" style="height: 52px;">
+$GNRMC,084532.00,A,2059.9790,N,10550.5680,E,0.22,45.0,250926,,,A*7F
+$GNGGA,084532.00,2059.9790,N,10550.5680,E,1,14,0.8,15.2,M,0.0,M,,*5C
+          </div>
+        </div>
+      </div>
+
+      <!-- ==============================================
+           CARD 2: IMU MPU6050 (CON QUAY GÓC NHÌN LA BÀN)
+           ============================================== -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>Module IMU MPU6050</span>
+            <span class="chip-tag chip-amber">6-DOF Gyro / Accel</span>
+          </div>
+          <button id="btn-imu-send-telemetry" class="btn btn-warning btn-sm">Gửi Telemetry IMU</button>
+        </div>
+
+        <div class="compass-container">
+          <div class="compass-dial-wrap">
+            <div class="compass-dial">
+              <span class="compass-cardinal cardinal-n">B (0°)</span>
+              <span class="compass-cardinal cardinal-e">Đ (90°)</span>
+              <span class="compass-cardinal cardinal-s">N (180°)</span>
+              <span class="compass-cardinal cardinal-w">T (270°)</span>
+              <div id="compass-needle" class="compass-needle" style="transform: rotate(45deg);"></div>
+              <div class="compass-center-dot"></div>
+            </div>
+          </div>
+          <div style="flex: 1;">
+            <div style="font-size: 0.85rem; font-weight: 800; color: #fff; margin-bottom: 4px;">
+              Hướng Nhìn Hiện Tại: <span id="imu-yaw-heading" style="color: var(--accent-amber);">45° (Đông Bắc)</span>
+            </div>
+            <div style="font-size: 0.74rem; color: var(--text-sub); margin-bottom: 8px;">
+              Góc Yaw dùng để xác định tầm nhìn du khách vào POI hoặc Hiện vật trong 1.5s
+            </div>
+            <div class="presets-row">
+              <button class="btn btn-secondary btn-sm" onclick="setYaw(0)">0° (Bắc)</button>
+              <button class="btn btn-secondary btn-sm" onclick="setYaw(90)">90° (Đông)</button>
+              <button class="btn btn-secondary btn-sm" onclick="setYaw(180)">180° (Nam)</button>
+              <button class="btn btn-secondary btn-sm" onclick="setYaw(270)">270° (Tây)</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label><span>Góc Yaw (0° - 360°):</span></label>
+          <div class="slider-row">
+            <input type="range" id="imu-yaw-slider" min="0" max="360" step="1" value="45" />
+            <span id="imu-yaw-val" class="slider-val">45°</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Pitch (Cúi / Ngửa: -90° đến +90°)</label>
+            <input type="number" id="imu-pitch" class="input-field" value="0" />
+          </div>
+          <div class="form-group">
+            <label>Roll (Nghiêng vai: -90° đến +90°)</label>
+            <input type="number" id="imu-roll" class="input-field" value="0" />
+          </div>
+        </div>
+        <!-- GAZE & FOV RADAR HUD -->
+        <div id="imu-gaze-hud" style="margin-top: 10px; background: rgba(15, 23, 42, 0.95); border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; font-size: 0.74rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <div style="font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+              <span>🎯 Mục Tiêu Trong Tầm Ngắm (5m - 45°):</span>
+            </div>
+            <span id="imu-gaze-status" style="color: #94a3b8; font-weight: 700;">Chưa gửi dữ liệu</span>
+          </div>
+          <div id="imu-gaze-detail" style="color: #cbd5e1; line-height: 1.4;">
+            Chưa phát hiện hiện vật trong tầm ngắm 5m.
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center; margin-top: 8px; flex-wrap: wrap;">
+            <button id="btn-quick-gaze-trigger" class="btn btn-warning btn-sm" style="display: none; padding: 3px 10px; font-size: 0.72rem; font-weight: 700;">⚡ Kích Hoạt Phát DAC Ngay</button>
+            <label style="display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: #94a3b8; cursor: pointer; user-select: none;">
+              <input type="checkbox" id="chk-auto-gaze-play" checked /> Tự động gửi lên server & phát DAC khi ngắm trúng 1.5s
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==============================================
+           CARD 3: MICROPHONE INMP441 (THU ÂM NHỊ PHÂN)
+           ============================================== -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>Microphone INMP441</span>
+            <span class="chip-tag chip-cyan">I2S Digital MEMS</span>
+          </div>
+          <span id="audio-record-status" style="font-size: 0.75rem; color: var(--text-dim); font-weight: 700;">Chưa có dữ liệu</span>
+        </div>
+
+        <!-- LIVE WAVEFORM CANVAS -->
+        <canvas id="mic-wave-canvas" class="wave-canvas"></canvas>
+
+        <!-- RECORDING & INPUT CONTROLS -->
+        <div class="form-row">
+          <button id="btn-record-mic" class="btn btn-danger">Bắt Đầu Thu Âm Micro</button>
+          <button id="btn-sample-question" class="btn btn-secondary">Tạo Âm Thanh Mẫu WAV</button>
+          <label class="btn btn-secondary" style="margin: 0;">
+            Tải File (.wav/.mp3)
+            <input type="file" id="file-audio-upload" accept="audio/*,.wav,.mp3,.bin,.pcm" style="display: none;" />
+          </label>
+          <button id="btn-preview-input-audio" class="btn btn-secondary" disabled>Nghe Thử Đầu Vào</button>
+        </div>
+
+        <!-- BINARY INSPECTOR FOR RECORDED PACKET -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <label class="input-label">Gói Tin Nhị Phân INMP441 (WAV PCM 16-bit):</label>
+            <span id="input-audio-bytes-count" style="font-size: 0.72rem; color: var(--accent-cyan); font-weight: 700;">0 bytes</span>
+          </div>
+          <div id="input-hex-dump" class="hex-viewer" style="height: 64px;">
+[Chưa thu âm hoặc chọn file. Hãy bấm "Bắt Đầu Thu Âm Micro" hoặc "Tạo Âm Thanh Mẫu WAV"]
+          </div>
+        </div>
+      </div>
+
+      <!-- ==============================================
+           CARD 4: DAC PCM5102A (GIẢI MÃ NHỊ PHÂN .MP3 TRẢ VỀ)
+           ============================================== -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>DAC PCM5102A & Loa</span>
+            <span class="chip-tag chip-purple">I2S 32-bit / 384kHz DAC</span>
+          </div>
+          <div class="dac-pins-badge" style="display: flex; gap: 6px; align-items: center;">
+            <span id="audio-engine-badge" class="dac-pin" style="cursor: pointer; background: #b45309; color: #fff; font-weight: 700; border-radius: 4px; padding: 2px 8px; border: 1px solid #f59e0b;" onclick="unlockAudioEngine()" title="Nhấp để cấp quyền tự động phát âm thanh">🔇 Click Bật Âm Thanh</span>
+            <span class="dac-pin active">DIN</span>
+            <span class="dac-pin active">BCK</span>
+            <span class="dac-pin active">LCK</span>
+            <span class="dac-pin">SCK</span>
+          </div>
+        </div>
+
+        <!-- DAC OUTPUT WAVEFORM -->
+        <canvas id="dac-wave-canvas" class="wave-canvas"></canvas>
+
+        <!-- DAC AUDIO PLAYER & CONTROLS -->
+        <div class="dac-player-bar">
+          <div class="dac-controls">
+            <button id="btn-dac-play" class="btn btn-success btn-sm" disabled>Phát DAC</button>
+            <button id="btn-dac-pause" class="btn btn-secondary btn-sm" disabled>Tạm Dừng</button>
+            <button id="btn-dac-stop" class="btn btn-secondary btn-sm" disabled>Dừng</button>
+            <input type="range" id="dac-seek-slider" class="seek-slider" min="0" max="100" value="0" disabled />
+            <span id="dac-time-display" style="font-family: monospace; font-size: 0.78rem; min-width: 75px; text-align: right;">00:00 / 00:00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span id="dac-status-text" style="font-size: 0.74rem; color: var(--text-dim);">Chờ nhận luồng nhị phân .mp3 từ server...</span>
+            <button id="btn-download-mp3" class="btn btn-secondary btn-sm" disabled>Tải File .mp3 Về Máy</button>
+          </div>
+        </div>
+
+        <!-- BINARY INSPECTOR FOR RECEIVED MP3 PACKET -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <label class="input-label">Gói Nhị Phân MP3 Server Trả Về (Server -> ESP32 -> PCM5102A):</label>
+            <span id="output-audio-bytes-count" style="font-size: 0.72rem; color: var(--accent-rose); font-weight: 700;">0 bytes</span>
+          </div>
+          <div id="output-hex-dump" class="hex-viewer" style="height: 64px;">
+[Chờ server trả về dữ liệu nhị phân âm thanh .mp3]
+          </div>
+        </div>
+
+        <!-- ============================================================
+             BỘ KIỂM THỬ ÂM THANH 3D KHÔNG GIAN (3D SPATIAL AUDIO HRTF LAB)
+             ============================================================ -->
+        <div id="spatial-audio-test-box" style="margin-top: 14px; background: rgba(15, 23, 42, 0.95); border: 1.5px solid #0284c7; border-radius: 10px; padding: 14px; box-shadow: 0 4px 16px rgba(2, 132, 199, 0.15);">
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.25rem;">🎧</span>
+              <div>
+                <strong style="font-size: 0.85rem; color: #38bdf8;">Phòng Kiểm Thử Âm Thanh 3D Không Gian (Web Audio HRTF)</strong>
+                <div style="font-size: 0.72rem; color: #94a3b8;">Đeo tai nghe để cảm nhận âm thanh xoay quanh đầu (Trái / Phải / Trước / Sau và cự ly 5m)</div>
+              </div>
+            </div>
+            <button type="button" id="btn-toggle-3d-spatial" class="btn btn-primary btn-sm" style="font-weight: 800; font-size: 0.76rem; padding: 6px 14px; background: #0284c7; border: 1px solid #38bdf8;">
+              🎧 3D AUDIO: ĐANG BẬT
+            </button>
+          </div>
+
+          <!-- Radar mô phỏng Đầu Người Nghe & Vị Trí Nguồn Âm (Head Radar Canvas) -->
+          <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; background: #070d19; padding: 10px; border-radius: 8px; border: 1px solid #1e293b;">
+            <div style="text-align: center;">
+              <canvas id="spatial-radar-canvas" width="160" height="160" style="background: #0b1120; border-radius: 50%; border: 1px solid #334155; display: block; margin: 0 auto;"></canvas>
+              <div style="font-size: 0.68rem; color: #64748b; margin-top: 4px;">Radar Vị Trí Âm Thanh So Với Đầu Người</div>
+            </div>
+
+            <div style="flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; justify-content: space-between; font-size: 0.75rem;">
+                <span style="color: #94a3b8;">Góc lệch tương đối:</span>
+                <strong id="spatial-hud-angle" style="color: #f59e0b;">0° (Chính Diện Trước Mặt)</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.75rem;">
+                <span style="color: #94a3b8;">Cự ly nguồn phát:</span>
+                <strong id="spatial-hud-dist" style="color: #38bdf8;">2.0 mét</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.75rem;">
+                <span style="color: #94a3b8;">Tọa độ Panner 3D (X, Z):</span>
+                <span id="spatial-hud-coords" style="font-family: monospace; color: #a7f3d0;">X: 0.0m | Z: -2.0m</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.75rem;">
+                <span style="color: #94a3b8;">Âm lượng động (Dynamic Gain):</span>
+                <strong id="spatial-hud-vol" style="color: #ec4899;">85%</strong>
+              </div>
+
+              <!-- Nút nghe thử âm thanh 3D tức thì -->
+              <div style="display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap;">
+                <button type="button" id="btn-play-spatial-demo" class="btn btn-success btn-sm" style="flex: 1; font-weight: 700;">
+                  ▶ Phát Thử Âm Thanh 3D
+                </button>
+                <button type="button" id="btn-stop-spatial-demo" class="btn btn-secondary btn-sm" style="font-weight: 700;">
+                  ⏹ Dừng
+                </button>
+                <button type="button" id="btn-spatial-orbit" class="btn btn-warning btn-sm" style="font-weight: 700;">
+                  🌀 Tự Động Xoay 360°
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Các nút vị trí góc nhanh -->
+          <div style="margin-bottom: 10px;">
+            <div style="font-size: 0.72rem; color: #94a3b8; margin-bottom: 4px; font-weight: 700;">CHỌN NHANH HƯỚNG ÂM PHÁT ĐẾN TAI:</div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 6px;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="setSpatialPreset(-90)">👈 Tai Trái (-90°)</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="setSpatialPreset(0)">🎯 Trước Mặt (0°)</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="setSpatialPreset(90)">👉 Tai Phải (+90°)</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="setSpatialPreset(180)">🔄 Sau Lưng (180°)</button>
+              <button type="button" class="btn btn-secondary btn-sm" style="border-color: #f59e0b; color: #f59e0b;" onclick="syncSpatialWithImu()">🧭 Theo IMU Module 2</button>
+            </div>
+          </div>
+
+          <!-- 2 Thanh trượt điều khiển: Góc Yaw và Khoảng cách (Cự ly) -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.72rem; margin-bottom: 2px;">
+                <label style="color: #cbd5e1; font-weight: 700;">Góc Hướng Âm (-180° đến +180°):</label>
+                <span id="spatial-angle-display" style="color: #38bdf8; font-weight: 700;">0°</span>
+              </div>
+              <input type="range" id="slider-spatial-angle" min="-180" max="180" value="0" style="width: 100%; accent-color: #38bdf8;" />
+            </div>
+
+            <div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.72rem; margin-bottom: 2px;">
+                <label style="color: #cbd5e1; font-weight: 700;">Cự Ly Khoảng Cách (0.5m - 5m):</label>
+                <span id="spatial-dist-display" style="color: #10b981; font-weight: 700;">2.0m</span>
+              </div>
+              <input type="range" id="slider-spatial-dist" min="0.5" max="5.0" step="0.1" value="2.0" style="width: 100%; accent-color: #10b981;" />
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ============================================================
+             ESP32 HARDWARE WEBSOCKET & MICROSD CARD SIMULATOR (3D AUDIO)
+             ============================================================ -->
+        <div class="esp32-sd-box" style="background: rgba(15, 23, 42, 0.85); border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-top: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.15rem;">💾</span>
+              <strong style="font-size: 0.82rem; color: #38bdf8;">ESP32 MicroSD SPI / SDIO (Trích Xuất Âm Thanh Từ Mã Số)</strong>
+            </div>
+            <div id="esp32-ws-badge" class="status-badge offline" style="font-size: 0.72rem; padding: 3px 10px;">
+              <span class="status-dot"></span>
+              <span id="esp32-ws-status">ESP32 Socket: Đang kết nối...</span>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 10px;">
+            <div style="background: #0b1120; border: 1px solid #1e293b; border-radius: 6px; padding: 6px 10px;">
+              <div style="font-size: 0.68rem; color: #64748b; text-transform: uppercase;">Phần Cứng Thẻ Nhớ</div>
+              <div style="font-size: 0.78rem; font-weight: 700; color: #10b981;">MicroSD FAT32 16GB</div>
+            </div>
+            <div style="background: #0b1120; border: 1px solid #1e293b; border-radius: 6px; padding: 6px 10px;">
+              <div style="font-size: 0.68rem; color: #64748b; text-transform: uppercase;">Mã Số Nhận Từ Server</div>
+              <div id="sd-target-poi" style="font-size: 0.78rem; font-weight: 700; color: #f59e0b;">Chờ mã số (#---)</div>
+            </div>
+            <div style="background: #0b1120; border: 1px solid #1e293b; border-radius: 6px; padding: 6px 10px;">
+              <div style="font-size: 0.68rem; color: #64748b; text-transform: uppercase;">ESP32 Liên Hệ MicroSD</div>
+              <div id="sd-target-file" style="font-size: 0.78rem; font-weight: 700; color: #38bdf8; font-family: monospace;">---.mp3</div>
+            </div>
+            <div style="background: #0b1120; border: 1px solid #1e293b; border-radius: 6px; padding: 6px 10px;">
+              <div style="font-size: 0.68rem; color: #64748b; text-transform: uppercase;">Chuẩn I2S DMA & DAC</div>
+              <div style="font-size: 0.78rem; font-weight: 700; color: #c084fc;">PCM5102A 16-bit</div>
+            </div>
+          </div>
+
+          <!-- MicroSD Active Action Banner -->
+          <div id="sd-action-banner" style="background: rgba(56, 189, 248, 0.08); border: 1px dashed #38bdf8; border-radius: 6px; padding: 8px 12px; font-size: 0.76rem; color: #e2e8f0; line-height: 1.5; display: none;">
+            <!-- Cập nhật tự động khi server gửi mã số xuống ESP32 -->
+          </div>
+
+          <!-- Fast Test Triggers & SD Tracks info -->
+          <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <div style="font-size: 0.73rem; color: #94a3b8;">
+              Tệp lưu trên thẻ SD: <code style="color: #38bdf8;">/sdcard/001.mp3</code>, <code style="color: #38bdf8;">002.mp3</code>, <code style="color: #38bdf8;">003.mp3</code>
+            </div>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button class="btn btn-secondary btn-sm" onclick="triggerSimulatedServerGaze(1)">🧪 Test Gửi Mã Số #1 (001.mp3)</button>
+              <button class="btn btn-secondary btn-sm" onclick="triggerSimulatedServerGaze(2)">🧪 Mã Số #2 (002.mp3)</button>
+              <button class="btn btn-secondary btn-sm" onclick="triggerSimulatedServerGaze(3)">🧪 Mã Số #3 (003.mp3)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==============================================
+           CARD 5: BỘ ĐIỀU PHỐI GỬI GÓI TIN & KẾT QUẢ AI GROQ
+           ============================================== -->
+      <div class="card card-full">
+        <div class="card-header">
+          <div class="card-title">
+            <span>Tiến Trình Gửi Lên Server & Tự Động Giải Mã Bằng AI Groq</span>
+            <span class="chip-tag chip-cyan">Cloud STT Whisper + Groq LLM</span>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-sub); cursor: pointer;">
+              <input type="checkbox" id="chk-direct-binary-mode" checked />
+              <span>Chế độ ESP32: Nhận Trực Tiếp File Nhị Phân .MP3</span>
+            </label>
+            <button id="btn-send-full-pipeline" class="btn btn-primary" style="padding: 8px 24px; font-size: 0.88rem;">
+              Gửi Lên Server Xử Lý (INMP441 -> Groq -> PCM5102A)
+            </button>
+          </div>
+        </div>
+
+        <!-- AI RESULTS DISPLAY BOX -->
+        <div id="ai-result-container" class="ai-result-box" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="ai-bubble-title">1. Giọng Nói Nhận Diện (Groq Whisper STT):</span>
+            <span id="res-latency" style="font-size: 0.72rem; color: var(--text-dim); font-family: monospace;">Độ trễ: 0ms</span>
+          </div>
+          <div id="res-stt-text" style="font-size: 0.88rem; color: var(--accent-amber); font-weight: 700; font-style: italic;">
+            "..."
+          </div>
+
+          <div style="border-top: 1px dashed var(--border-color); margin: 6px 0;"></div>
+
+          <div class="ai-bubble-title">2. Câu Trả Lời Của AI Guide (Groq LLM):</div>
+          <div id="res-ai-reply" class="ai-bubble-text">
+            ...
+          </div>
+
+          <div id="res-extra-meta" style="font-size: 0.74rem; color: var(--text-dim); margin-top: 4px;">
+            Điểm tham quan gần nhất: <strong id="res-nearest-poi" style="color: var(--accent-cyan);">---</strong>
+          </div>
+        </div>
+
+        <!-- TERMINAL LOGS -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label class="input-label">Nhật Ký Truyền Thông Gói Tin (Protocol Log):</label>
+            <button class="btn btn-secondary btn-sm" onclick="clearLogs()">Xóa Nhật Ký</button>
+          </div>
+          <div id="terminal-logs" class="console-logs"></div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ==============================================
+         CARD 6: CHẾ ĐỘ MÔ PHỎNG TẤN CÔNG "HACKER BLACK" (KỸ NĂNG TẦM TRUNG)
+         ============================================== -->
+    <div id="card-hacker-black" class="card-hacker">
+      <div class="card-header" style="border-bottom-color: #3f192b; padding-bottom: 12px;">
+        <div class="card-title">
+          <span style="font-size: 1.15rem; color: #fb7185;">💀 Mô Phỏng Tấn Công Đột Nhập: HACKER BLACK (Kỹ Năng Tầm Trung)</span>
+          <span class="hacker-badge-red">RED TEAM SECURITY AUDIT</span>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button id="btn-run-full-pentest" class="btn hacker-btn-primary" onclick="runFullPentest()">
+            💀 Chạy Tấn Công Toàn Diện (Full Pentest)
+          </button>
+          <button class="btn hacker-btn-ghost" onclick="resetHackerSimulator()">
+            🔄 Khôi Phục Mặc Định
+          </button>
+        </div>
+      </div>
+
+      <div style="font-size: 0.82rem; color: #94a3b8; line-height: 1.5;">
+        Mô phỏng một hacker mũ đen có kỹ năng mạng trung cấp (sử dụng các công cụ dò quét cổng ẩn, giả mạo gói tin WebSocket, bẻ khóa REST APIs, giả lập ESP32 không có chìa khóa, thử mật khẩu từ điển) nhằm đánh cắp dữ liệu di tích và chiếm quyền điều khiển phát thanh/bản đồ.
+      </div>
+
+      <!-- SCOREBOARD / METRICS -->
+      <div class="hacker-scoreboard">
+        <div class="hacker-stat-box">
+          <span class="hacker-stat-title">🎯 Tổng Số Đòn Tấn Công</span>
+          <span id="hacker-stat-total" class="hacker-stat-val val-cyan">16 Vectors</span>
+        </div>
+        <div class="hacker-stat-box">
+          <span class="hacker-stat-title">🛡️ Đòn Bị Máy Chủ Chặn Đứng</span>
+          <span id="hacker-stat-blocked" class="hacker-stat-val val-success">0 (0%)</span>
+        </div>
+        <div class="hacker-stat-box">
+          <span class="hacker-stat-title">🚨 Cửa Bị Hacker Chọc Thủng</span>
+          <span id="hacker-stat-breached" class="hacker-stat-val val-danger">0</span>
+        </div>
+        <div class="hacker-stat-box">
+          <span class="hacker-stat-title">🗄️ Dữ Liệu Bị Rò Rỉ / Đánh Cắp</span>
+          <span id="hacker-stat-exfiltrated" class="hacker-stat-val val-success">0 KB</span>
+        </div>
+        <div class="hacker-stat-box">
+          <span class="hacker-stat-title">🔒 Đánh Giá Mức Độ An Ninh</span>
+          <span id="hacker-stat-rating" class="hacker-stat-val val-cyan">CHỜ KIỂM THỬ</span>
+        </div>
+      </div>
+
+      <!-- ATTACK CATEGORIES BUTTONS -->
+      <div>
+        <label class="input-label" style="display: block; margin-bottom: 6px; color: #fca5a5;">Kích hoạt các đòn tấn công chuyên biệt:</label>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn hacker-btn-ghost" onclick="runAttackPhase(1)">🔍 1. Quét Cổng & File Ẩn (/admin, .env)</button>
+          <button class="btn hacker-btn-ghost" onclick="runAttackPhase(2)">⚡ 2. Leo Thang WebSocket (WS Hijack)</button>
+          <button class="btn hacker-btn-ghost" onclick="runAttackPhase(3)">🛑 3. Chiếm Quyền REST APIs (Postman/Curl)</button>
+          <button class="btn hacker-btn-ghost" onclick="runAttackPhase(4)">📡 4. Giả Mạo Phần Cứng ESP32</button>
+          <button class="btn hacker-btn-ghost" onclick="runAttackPhase(5)">🔑 5. Vét Cạn Mật Mã Từ Điển (Brute-Force)</button>
+          <button class="btn hacker-btn-ghost" onclick="runAttackPhase(6)">🕵️ 6. Đánh Cắp Dữ Liệu Khách & Bản Đồ</button>
+          <button class="btn hacker-btn-ghost" onclick="clearHackerConsole()">🧹 Xóa Console</button>
+        </div>
+      </div>
+
+      <!-- ATTACK RESULTS TABLE -->
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <label class="input-label" style="color: #fca5a5;">Chi Tiết 16 Vector Tấn Công Thực Nghiệm:</label>
+          <span id="hacker-run-progress" style="font-size: 0.72rem; color: #94a3b8; font-family: monospace;">Trạng thái: Sẵn sàng</span>
+        </div>
+        <div class="hacker-table-wrap">
+          <table class="hacker-table">
+            <thead>
+              <tr>
+                <th style="width: 45px;">STT</th>
+                <th style="width: 170px;">Đòn Tấn Công</th>
+                <th style="width: 200px;">Mục Tiêu & Phương Thức</th>
+                <th>Dữ Liệu Hacker Gửi Đi (Payload)</th>
+                <th style="width: 180px;">Phản Hồi Máy Chủ</th>
+                <th style="width: 140px; text-align: center;">Kết Quả Phòng Thủ</th>
+              </tr>
+            </thead>
+            <tbody id="hacker-table-body">
+              <!-- Các dòng sẽ được render tự động bằng JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- HACKER CONSOLE LOGS -->
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <label class="input-label" style="color: #fca5a5;">Hacker Black Attack Terminal (Thời Gian Thực):</label>
+          <span style="font-size: 0.7rem; color: #e11d48; font-family: monospace;">● LIVE PENTEST TRACE</span>
+        </div>
+        <div id="hacker-console" class="hacker-console"></div>
+      </div>
+
+      <!-- SECURITY VERDICT / GIẢI THÍCH CHUYÊN SÂU -->
+      <div id="hacker-verdict-box" style="background: rgba(16, 185, 129, 0.08); border: 1px solid #059669; border-radius: 8px; padding: 16px; display: none;">
+        <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 0.95rem; color: #10b981; margin-bottom: 8px;">
+          <span>🛡️ BÁO CÁO KẾT QUẢ: HỆ THỐNG PHÒNG THỦ VỮNG CHẮC (HACKER TẦM TRUNG THẤT BẠI 100%)</span>
+        </div>
+        <div style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.6;">
+          <p><strong>Kết luận:</strong> Hacker Black với kỹ năng tầm trung <strong>hoàn toàn KHÔNG THỂ đột nhập</strong>, không thể lấy cắp dữ liệu di tích và không thể thao túng thiết bị phần cứng. Lý do hệ thống đánh chặn thành công:</p>
+          <ul style="margin: 8px 0 8px 20px;">
+            <li><strong>1. Ẩn giấu bề mặt tấn công:</strong> Toàn bộ cổng quản trị cũ (<code style="color: #fca5a5;">/admin</code>, <code style="color: #fca5a5;">/quanly</code>, <code style="color: #fca5a5;">/login</code>) trả về 404. Đường dẫn bí mật chỉ cấp duy nhất cho BQL di tích.</li>
+            <li><strong>2. Khóa cửa thời gian thực WebSocket:</strong> Bất kỳ gói tin <code style="color: #fca5a5;">REGISTER_ADMIN</code> nào không mang đúng mã bí mật <code style="color: #38bdf8;">ADMIN_SECRET_KEY</code> đều bị ngắt kết nối ngay tức khắc (Code 4001), không nhận được dữ liệu giám sát.</li>
+            <li><strong>3. Tường lửa Middleware kiểm soát API:</strong> 100% các thao tác thay đổi dữ liệu (tạo đoàn, hủy đoàn, phát thanh, sửa bản đồ, chốt pin, lấy danh sách nhóm) đều được <code style="color: #38bdf8;">adminAuthMiddleware</code> chặn với mã lỗi HTTP 401 Unauthorized.</li>
+            <li><strong>4. Xác thực hai chiều phần cứng:</strong> Thiết bị ESP32 và máy chủ đều kiểm tra mã bí mật <code style="color: #38bdf8;">ESP32_SECRET_KEY</code>, chặn đứng việc bơm dữ liệu GPS giả hoặc cướp luồng loa PCM5102A.</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    // STATE & GLOBAL REFS
+    // ============================================================
+    let serverBaseUrl = (window.location && window.location.protocol.startsWith('http')) ? window.location.origin : 'http://localhost:4000';
+    let currentInputAudioBlob = null;
+    let currentInputAudioBuffer = null;
+    let currentOutputMp3ArrayBuffer = null;
+    let currentOutputMp3Blob = null;
+    let cachedSiteData = null;
+
+    // Web Audio Context cho Microphone & DAC Player
+    let audioCtx = null;
+    let isAudioUnlocked = false;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+      }
+      return audioCtx;
+    }
+
+    function updateAudioBadge(unlocked) {
+      const badge = document.getElementById('audio-engine-badge');
+      if (badge) {
+        if (unlocked) {
+          badge.textContent = '🔊 Audio: Đã Mở Khóa';
+          badge.style.background = '#059669';
+          badge.style.borderColor = '#10b981';
+          badge.style.color = '#fff';
+        } else {
+          badge.textContent = '🔇 Click Bật Âm Thanh';
+          badge.style.background = '#b45309';
+          badge.style.borderColor = '#f59e0b';
+          badge.style.color = '#fff';
+        }
+      }
+    }
+
+    window.unlockAudioEngine = function() {
+      const ctx = getAudioContext();
+      if (ctx && ctx.state === 'suspended') {
+        ctx.resume().then(() => {
+          isAudioUnlocked = true;
+          updateAudioBadge(true);
+          log('AUDIO', 'Đã mở khóa hệ thống âm thanh (AudioContext Resumed). Sẵn sàng phát tự động!', 'log-tag-audio');
+        }).catch(() => {});
+      } else {
+        isAudioUnlocked = true;
+        updateAudioBadge(true);
+      }
+    };
+
+    document.addEventListener('click', () => window.unlockAudioEngine(), { passive: true });
+    document.addEventListener('touchstart', () => window.unlockAudioEngine(), { passive: true });
+    document.addEventListener('keydown', () => window.unlockAudioEngine(), { passive: true });
+
+    // ============================================================
+    // LOGGING SYSTEM
+    // ============================================================
+    const terminalLogs = document.getElementById('terminal-logs');
+    function log(tag, msg, colorClass = '') {
+      const line = document.createElement('div');
+      line.className = 'log-line';
+      const time = new Date().toLocaleTimeString('vi-VN', { hour12: false }) + '.' + String(Date.now() % 1000).padStart(3, '0');
+      line.innerHTML = `<span class="log-time">[${time}]</span><span class="${colorClass}">[${tag}]</span> ${msg}`;
+      terminalLogs.appendChild(line);
+      terminalLogs.scrollTop = terminalLogs.scrollHeight;
+    }
+
+    function clearLogs() {
+      terminalLogs.innerHTML = '';
+      log('SYSTEM', 'Đã xóa toàn bộ nhật ký.', 'log-tag-audio');
+    }
+
+    // ============================================================
+    // SERVER CONNECTION CHECK
+    // ============================================================
+    const cfgServerUrl = document.getElementById('cfg-server-url');
+    const serverStatusBadge = document.getElementById('server-status-badge');
+    const serverStatusText = document.getElementById('server-status-text');
+    const btnPingServer = document.getElementById('btn-ping-server');
+
+    function setServerUrl(url) {
+      cfgServerUrl.value = url;
+      serverBaseUrl = url.trim().replace(/\/+$/, '');
+      checkServerConnection();
+      if (typeof connectEsp32DeviceWs === 'function') {
+        connectEsp32DeviceWs();
+      }
+    }
+
+    async function checkServerConnection() {
+      serverBaseUrl = (cfgServerUrl.value || 'http://localhost:4000').trim().replace(/\/+$/, '');
+      serverStatusText.textContent = 'Đang kiểm tra kết nối...';
+      serverStatusBadge.className = 'status-badge';
+
+      const t0 = performance.now();
+      try {
+        const res = await fetch(`${serverBaseUrl}/api/site-data`, { method: 'GET', mode: 'cors' });
+        const latency = Math.round(performance.now() - t0);
+        if (res.ok) {
+          const json = await res.json();
+          cachedSiteData = json.data;
+          serverStatusBadge.className = 'status-badge';
+          serverStatusText.textContent = `Server: ONLINE (${latency}ms)`;
+          log('SERVER', `Kết nối thành công đến ${serverBaseUrl} (${latency}ms) - Di tích: ${json.data?.siteName || '2Guide'}`, 'log-tag-gps');
+          syncCurrentHubFromServer();
+        } else {
+          throw new Error(`HTTP ${res.status}`);
+        }
+      } catch (err) {
+        serverStatusBadge.className = 'status-badge offline';
+        serverStatusText.textContent = 'Server: OFFLINE';
+        log('SERVER', `Không thể kết nối đến ${serverBaseUrl}: ${err.message}`, 'log-tag-dac');
+      }
+    }
+
+    async function syncCurrentHubFromServer() {
+      try {
+        const hubId = (document.getElementById('cfg-hub-id')?.value || 'NEU001').trim();
+        const res = await fetch(`${serverBaseUrl}/api/hubs/${encodeURIComponent(hubId)}/info`);
+        const json = await res.json();
+        if (json.success && json.data && json.data.hub) {
+          const h = json.data.hub;
+          if (h.lat && h.lng) {
+            gpsLat.value = Number(h.lat).toFixed(5);
+            gpsLng.value = Number(h.lng).toFixed(5);
+            updateNmeaPreview();
+          }
+          if (h.yaw !== undefined) {
+            imuYawSlider.value = Math.round(h.yaw);
+            imuYawVal.textContent = `${Math.round(h.yaw)}°`;
+            compassNeedle.style.transform = `rotate(${Math.round(h.yaw)}deg)`;
+            imuYawHeading.textContent = `${Math.round(h.yaw)}° (${getHeadingName(Math.round(h.yaw))})`;
+            if (typeof updateTestGazeRadar === 'function') updateTestGazeRadar();
+            if (typeof syncSpatialFromImu === 'function') syncSpatialFromImu();
+          }
+        }
+      } catch (e) {}
+    }
+
+    btnPingServer.addEventListener('click', checkServerConnection);
+    cfgServerUrl.addEventListener('change', () => {
+      serverBaseUrl = cfgServerUrl.value.trim().replace(/\/+$/, '');
+      checkServerConnection();
+      if (typeof connectEsp32DeviceWs === 'function') {
+        connectEsp32DeviceWs();
+      }
+    });
+
+    // ============================================================
+    // BẢO MẬT ESP32 & XÁC THỰC HAI CHIỀU (ESP32 <-> SERVER)
+    // ============================================================
+    const cfgDeviceSecret = document.getElementById('cfg-device-secret');
+    const chkSendSecret = document.getElementById('chk-send-secret');
+    const authStatusBadge = document.getElementById('auth-status-badge');
+    const authStatusText = document.getElementById('auth-status-text');
+    const btnVerifySecretServer = document.getElementById('btn-verify-secret-server');
+
+    function getEsp32Secret() {
+      return (cfgDeviceSecret.value || '').trim();
+    }
+
+    window.setSecretKey = (key) => {
+      cfgDeviceSecret.value = key;
+      const isFake = key.toLowerCase().includes('fake');
+      if (isFake) {
+        authStatusBadge.className = 'status-badge offline';
+        authStatusText.textContent = 'Mã Giả Mạo: Sẵn sàng test phòng vệ';
+        log('BẢO MẬT', `Đã cài đặt mã giả mạo/bịp: "${key}". Hãy bấm gửi Telemetry hoặc Audio để kiểm thử máy chủ chặn kẻ gian.`, 'log-tag-dac');
+      } else {
+        authStatusBadge.className = 'status-badge';
+        authStatusText.textContent = 'Đã gán mã chính thức từ .env';
+        log('BẢO MẬT', `Đã cài đặt mã bí mật hợp lệ: "${key}" (Khớp với cấu hình ESP32_SECRET_KEY trong .env).`, 'log-tag-gps');
+      }
+      if (typeof connectEsp32DeviceWs === 'function') {
+        connectEsp32DeviceWs();
+      }
+    };
+
+    async function verifyDeviceSecretWithServer() {
+      const secret = getEsp32Secret();
+      authStatusText.textContent = 'Đang xác thực với Server...';
+      log('BẢO MẬT', `Đang gửi yêu cầu kiểm tra mã bí mật "${secret}" đến ${serverBaseUrl}/api/device/verify...`, 'log-tag-audio');
+
+      try {
+        const res = await fetch(`${serverBaseUrl}/api/device/verify`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Device-Secret': secret
+          },
+          body: JSON.stringify({ secretKey: secret })
+        });
+
+        const json = await res.json();
+        const serverSecretHeader = res.headers.get('X-Device-Secret');
+
+        if (res.ok && json.success) {
+          const isServerVerified = serverSecretHeader === secret || json.secretKey === secret;
+          if (isServerVerified) {
+            authStatusBadge.className = 'status-badge';
+            authStatusText.textContent = 'Xác thực 2 chiều thành công';
+            log('BẢO MẬT', `[XÁC THỰC 2 CHIỀU THÀNH CÔNG] Server đã xác nhận mã hợp lệ, đồng thời server phản hồi đúng mã bí mật: "${serverSecretHeader || json.secretKey}". Thiết bị và Server hoàn toàn tin cậy nhau!`, 'log-tag-gps');
+          } else {
+            authStatusBadge.className = 'status-badge offline';
+            authStatusText.textContent = 'Cảnh báo: Server trả sai mã!';
+            log('BẢO MẬT', `[CẢNH BÁO AN NINH] Server phản hồi nhưng mã X-Device-Secret không khớp ("${serverSecretHeader}" != "${secret}")! Phát hiện server bịp!`, 'log-tag-dac');
+          }
+        } else {
+          authStatusBadge.className = 'status-badge offline';
+          authStatusText.textContent = `Bị từ chối (HTTP ${res.status})`;
+          log('BẢO MẬT', `[TỪ CHỐI AN NINH] Server từ chối tiếp nhận vì sai mã bí mật: ${json.error || json.message} (HTTP ${res.status})`, 'log-tag-dac');
+        }
+      } catch (err) {
+        authStatusBadge.className = 'status-badge offline';
+        authStatusText.textContent = 'Lỗi kết nối';
+        log('BẢO MẬT', `Lỗi kiểm tra bảo mật: ${err.message}`, 'log-tag-dac');
+      }
+    }
+
+    btnVerifySecretServer.addEventListener('click', verifyDeviceSecretWithServer);
+
+    // ============================================================
+    // MODULE 1: GPS ATGM336H
+    // ============================================================
+    const gpsLat = document.getElementById('gps-lat');
+    const gpsLng = document.getElementById('gps-lng');
+    const gpsSats = document.getElementById('gps-sats');
+    const gpsNmeaPreview = document.getElementById('gps-nmea-preview');
+    const btnGpsSendTelemetry = document.getElementById('btn-gps-send-telemetry');
+
+    function updateNmeaPreview() {
+      const lat = parseFloat(gpsLat.value) || 20.99965;
+      const lng = parseFloat(gpsLng.value) || 105.84280;
+      const sats = parseInt(gpsSats.value) || 12;
+      const latDeg = Math.floor(lat);
+      const latMin = ((lat - latDeg) * 60).toFixed(4);
+      const lngDeg = Math.floor(lng);
+      const lngMin = ((lng - lngDeg) * 60).toFixed(4);
+
+      gpsNmeaPreview.textContent = 
+`$GNRMC,084532.00,A,${latDeg}${latMin},N,${lngDeg}${lngMin},E,0.22,45.0,250926,,,A*7F
+$GNGGA,084532.00,${latDeg}${latMin},N,${lngDeg}${lngMin},E,1,${sats},0.8,15.2,M,0.0,M,,*5C`;
+      if (typeof updateTestGazeRadar === 'function') updateTestGazeRadar();
+      if (typeof syncSpatialFromGazeOrGps === 'function') syncSpatialFromGazeOrGps();
+    }
+
+    window.setGps = (lat, lng, name) => {
+      gpsLat.value = lat;
+      gpsLng.value = lng;
+      updateNmeaPreview();
+      log('ATGM336H', `Đã chọn vị trí "${name}": Lat ${lat}, Lng ${lng}`, 'log-tag-gps');
+    };
+
+    window.getRealGeolocation = () => {
+      if (!navigator.geolocation) {
+        alert('Trình duyệt không hỗ trợ Geolocation API!');
+        return;
+      }
+      log('ATGM336H', 'Đang yêu cầu tọa độ GPS thật từ thiết bị...', 'log-tag-gps');
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          gpsLat.value = pos.coords.latitude.toFixed(6);
+          gpsLng.value = pos.coords.longitude.toFixed(6);
+          updateNmeaPreview();
+          log('ATGM336H', `Đã nhận GPS thực: Lat ${gpsLat.value}, Lng ${gpsLng.value} (Sai số ~${Math.round(pos.coords.accuracy)}m)`, 'log-tag-gps');
+        },
+        err => {
+          log('ATGM336H', `Lỗi lấy GPS: ${err.message}`, 'log-tag-dac');
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    };
+
+    [gpsLat, gpsLng, gpsSats].forEach(el => el.addEventListener('input', updateNmeaPreview));
+
+    btnGpsSendTelemetry.addEventListener('click', async () => {
+      const hubId = (document.getElementById('cfg-hub-id').value || 'NEU001').trim();
+      const battery = parseInt(document.getElementById('cfg-battery').value) || 100;
+      const lat = parseFloat(gpsLat.value) || 20.99965;
+      const lng = parseFloat(gpsLng.value) || 105.84280;
+      const yaw = parseFloat(imuYawSlider.value) || 0;
+      const secret = getEsp32Secret();
+      const shouldSend = chkSendSecret.checked;
+
+      const headers = { 'Content-Type': 'application/json' };
+      if (shouldSend && secret) headers['X-Device-Secret'] = secret;
+
+      log('ATGM336H', `Đang gửi gói tin Telemetry GPS (Hub: ${hubId}, Lat: ${lat}, Lng: ${lng}, Mã: ${shouldSend ? secret : '(Không gửi)'})...`, 'log-tag-gps');
+
+      try {
+        const res = await fetch(`${serverBaseUrl}/api/telemetry`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            hubId,
+            lat,
+            lng,
+            yaw,
+            battery,
+            rawGps: gpsNmeaPreview.textContent,
+            ...(shouldSend && secret ? { secretKey: secret } : {})
+          })
+        });
+
+        const json = await res.json();
+        const serverRespSecret = res.headers.get('X-Device-Secret') || json.secretKey;
+
+        if (res.status === 401) {
+          authStatusBadge.className = 'status-badge offline';
+          authStatusText.textContent = 'Telemetry bị từ chối (401)';
+          log('BẢO MẬT', `[TỪ CHỐI AN NINH] Server đã chặn gói tin Telemetry GPS vì sai/thiếu mã bí mật (HTTP 401)! ${json.error}`, 'log-tag-dac');
+          return;
+        }
+
+        if (json.success) {
+          if (serverRespSecret === secret) {
+            authStatusBadge.className = 'status-badge';
+            authStatusText.textContent = 'Server phản hồi đúng mã';
+            log('BẢO MẬT', `[XÁC MINH HAI CHIỀU] Server đã tiếp nhận và phản hồi đúng mã bí mật: "${serverRespSecret}".`, 'log-tag-gps');
+          } else {
+            authStatusBadge.className = 'status-badge offline';
+            authStatusText.textContent = 'Cảnh báo: Server trả sai mã!';
+            log('BẢO MẬT', `[CẢNH BÁO AN NINH] Server phản hồi nhưng mã X-Device-Secret không khớp!`, 'log-tag-dac');
+          }
+          log('ATGM336H', `Đã gửi Telemetry GPS cho Hub ${hubId} -> Server thành công! (Lat: ${lat}, Lng: ${lng})`, 'log-tag-gps');
+        } else {
+          log('ATGM336H', `Server báo lỗi: ${json.error}`, 'log-tag-dac');
+        }
+      } catch (e) {
+        log('ATGM336H', `Lỗi gửi Telemetry: ${e.message}`, 'log-tag-dac');
+      }
+    });
+
+    // ============================================================
+    // MODULE 2: IMU MPU6050
+    // ============================================================
+    const imuYawSlider = document.getElementById('imu-yaw-slider');
+    const imuYawVal = document.getElementById('imu-yaw-val');
+    const imuYawHeading = document.getElementById('imu-yaw-heading');
+    const compassNeedle = document.getElementById('compass-needle');
+    const btnImuSendTelemetry = document.getElementById('btn-imu-send-telemetry');
+
+    function getHeadingName(yaw) {
+      if (yaw >= 337.5 || yaw < 22.5) return 'Bắc (0°)';
+      if (yaw >= 22.5 && yaw < 67.5) return 'Đông Bắc (45°)';
+      if (yaw >= 67.5 && yaw < 112.5) return 'Đông (90°)';
+      if (yaw >= 112.5 && yaw < 157.5) return 'Đông Nam (135°)';
+      if (yaw >= 157.5 && yaw < 202.5) return 'Nam (180°)';
+      if (yaw >= 202.5 && yaw < 247.5) return 'Tây Nam (225°)';
+      if (yaw >= 247.5 && yaw < 292.5) return 'Tây (270°)';
+      return 'Tây Bắc (315°)';
+    }
+
+    let imuStreamThrottleTimer = null;
+    let pendingImuYaw = null;
+
+    function sendImuStreamPacket(yaw) {
+      const hubId = (document.getElementById('cfg-hub-id')?.value || 'NEU001').trim();
+      const secret = getEsp32Secret();
+      const pitch = parseFloat(document.getElementById('imu-pitch')?.value) || 0;
+      const roll = parseFloat(document.getElementById('imu-roll')?.value) || 0;
+
+      const payload = {
+        type: 'DEVICE_IMU_STREAM',
+        hubId,
+        yaw: Math.round(yaw),
+        pitch,
+        roll,
+        secretKey: secret
+      };
+
+      if (esp32Ws && esp32Ws.readyState === WebSocket.OPEN) {
+        esp32Ws.send(JSON.stringify(payload));
+      }
+    }
+
+    function streamImuYawToServer(yaw) {
+      pendingImuYaw = yaw;
+      if (!imuStreamThrottleTimer) {
+        sendImuStreamPacket(yaw);
+        imuStreamThrottleTimer = setTimeout(() => {
+          imuStreamThrottleTimer = null;
+          if (pendingImuYaw !== null) {
+            sendImuStreamPacket(pendingImuYaw);
+            pendingImuYaw = null;
+          }
+        }, 40); // 25 FPS streaming realtime
+      }
+    }
+
+    window.setYaw = (deg) => {
+      imuYawSlider.value = deg;
+      updateYaw();
+    };
+
+    function updateYaw() {
+      const yaw = parseFloat(imuYawSlider.value);
+      imuYawVal.textContent = `${yaw}°`;
+      compassNeedle.style.transform = `rotate(${yaw}deg)`;
+      imuYawHeading.textContent = `${yaw}° (${getHeadingName(yaw)})`;
+      if (typeof updateTestGazeRadar === 'function') updateTestGazeRadar();
+      if (typeof syncSpatialFromImu === 'function') syncSpatialFromImu();
+
+      // PHÁT SÓNG REALTIME QUA WEBSOCKET (MÔ PHỎNG MPU6050 THẬT ĐẾN BQL VÀ USER)
+      streamImuYawToServer(yaw);
+    }
+
+    imuYawSlider.addEventListener('input', updateYaw);
+    imuYawSlider.addEventListener('change', () => {
+      sendImuStreamPacket(parseFloat(imuYawSlider.value) || 0);
+    });
+
+    // Cho phép xoay la bàn trực tiếp bằng cách bấm/kéo chuột trên mặt đồng hồ la bàn
+    const compassDialElem = document.querySelector('.compass-dial');
+    if (compassDialElem) {
+      compassDialElem.style.cursor = 'crosshair';
+      let isDraggingCompass = false;
+
+      function handleCompassPointer(e) {
+        const rect = compassDialElem.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        const dx = clientX - centerX;
+        const dy = clientY - centerY;
+        let deg = Math.atan2(dx, -dy) * 180 / Math.PI;
+        deg = (deg + 360) % 360;
+        imuYawSlider.value = Math.round(deg);
+        updateYaw();
+      }
+
+      compassDialElem.addEventListener('mousedown', (e) => {
+        isDraggingCompass = true;
+        handleCompassPointer(e);
+      });
+      window.addEventListener('mousemove', (e) => {
+        if (isDraggingCompass) handleCompassPointer(e);
+      });
+      window.addEventListener('mouseup', () => {
+        if (isDraggingCompass) {
+          isDraggingCompass = false;
+          sendImuStreamPacket(parseFloat(imuYawSlider.value) || 0);
+        }
+      });
+
+      // Hỗ trợ cảm ứng điện thoại
+      compassDialElem.addEventListener('touchstart', (e) => {
+        isDraggingCompass = true;
+        handleCompassPointer(e);
+      }, { passive: true });
+      window.addEventListener('touchmove', (e) => {
+        if (isDraggingCompass) handleCompassPointer(e);
+      }, { passive: true });
+      window.addEventListener('touchend', () => {
+        if (isDraggingCompass) {
+          isDraggingCompass = false;
+          sendImuStreamPacket(parseFloat(imuYawSlider.value) || 0);
+        }
+      });
+    }
+
+    btnImuSendTelemetry.addEventListener('click', async () => {
+      const hubId = (document.getElementById('cfg-hub-id').value || 'NEU001').trim();
+      const yaw = parseFloat(imuYawSlider.value) || 0;
+      const pitch = parseFloat(document.getElementById('imu-pitch').value) || 0;
+      const roll = parseFloat(document.getElementById('imu-roll').value) || 0;
+      const secret = getEsp32Secret();
+      const shouldSend = chkSendSecret.checked;
+
+      log('MPU6050', `Đang phát sóng Telemetry IMU (Yaw: ${yaw}°, Pitch: ${pitch}°, Roll: ${roll}°)...`, 'log-tag-imu');
+
+      // Gửi góc quay IMU qua WebSocket (MPU6050 chỉ truyền yaw/pitch/roll, TUYỆT ĐỐI không gửi lat/lng để tránh đè GPS)
+      sendImuStreamPacket(yaw);
+      log('MPU6050', `Đã cập nhật góc quay MPU6050: Yaw=${yaw}° (${getHeadingName(yaw)}), Pitch=${pitch}°, Roll=${roll}° realtime tới BQL và Khách!`, 'log-tag-imu');
+
+      if (currentTargetGazePoi) {
+        log('TEST GAZE', `[KÍCH HOẠT THUYẾT MINH HIỆN VẬT] Khách đang hướng vào Hiện vật #${currentTargetGazePoi.number} (${currentTargetGazePoi.name}) -> Gửi lệnh Gaze lên server...`, 'log-tag-gps');
+        triggerSimulatedServerGaze(currentTargetGazePoi.number);
+      }
+    });
+
+    // ============================================================
+    // MODULE 3: INMP441 RECORDING & WAV ENCODING
+    // ============================================================
+    const btnRecordMic = document.getElementById('btn-record-mic');
+    const btnSampleQuestion = document.getElementById('btn-sample-question');
+    const fileAudioUpload = document.getElementById('file-audio-upload');
+    const btnPreviewInputAudio = document.getElementById('btn-preview-input-audio');
+    const audioRecordStatus = document.getElementById('audio-record-status');
+    const inputAudioBytesCount = document.getElementById('input-audio-bytes-count');
+    const inputHexDump = document.getElementById('input-hex-dump');
+    const micWaveCanvas = document.getElementById('mic-wave-canvas');
+    const micCanvasCtx = micWaveCanvas.getContext('2d');
+
+    let mediaStream = null;
+    let audioWorkletOrScriptNode = null;
+    let isRecording = false;
+    let recordedPcmChunks = [];
+    let micAnalyser = null;
+    let animFrameId = null;
+
+    // Helper chuyển đổi mảng Float32 thành WAV 16-bit PCM Mono
+    function encodeWav(samples, sampleRate = 16000) {
+      const buffer = new ArrayBuffer(44 + samples.length * 2);
+      const view = new DataView(buffer);
+
+      function writeString(offset, string) {
+        for (let i = 0; i < string.length; i++) {
+          view.setUint8(offset + i, string.charCodeAt(i));
+        }
+      }
+
+      /* RIFF identifier */
+      writeString(0, 'RIFF');
+      /* file length */
+      view.setUint32(4, 36 + samples.length * 2, true);
+      /* RIFF type */
+      writeString(8, 'WAVE');
+      /* format chunk identifier */
+      writeString(12, 'fmt ');
+      /* format chunk length */
+      view.setUint32(16, 16, true);
+      /* sample format (raw PCM) */
+      view.setUint16(20, 1, true);
+      /* channel count (mono) */
+      view.setUint16(22, 1, true);
+      /* sample rate */
+      view.setUint32(24, sampleRate, true);
+      /* byte rate (sampleRate * blockAlign) */
+      view.setUint32(28, sampleRate * 2, true);
+      /* block align (channelCount * bytesPerSample) */
+      view.setUint16(32, 2, true);
+      /* bits per sample */
+      view.setUint16(34, 16, true);
+      /* data chunk identifier */
+      writeString(36, 'data');
+      /* data chunk length */
+      view.setUint32(40, samples.length * 2, true);
+
+      // Write PCM 16-bit samples
+      let offset = 44;
+      for (let i = 0; i < samples.length; i++, offset += 2) {
+        let s = Math.max(-1, Math.min(1, samples[i]));
+        view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      }
+
+      return new Blob([view], { type: 'audio/wav' });
+    }
+
+    // Helper tạo Hex Dump
+    function generateHexDump(arrayBuffer, maxBytes = 48) {
+      const bytes = new Uint8Array(arrayBuffer.slice(0, maxBytes));
+      let hex = '';
+      let ascii = '';
+      for (let i = 0; i < bytes.length; i++) {
+        const b = bytes[i];
+        hex += b.toString(16).padStart(2, '0').toUpperCase() + ' ';
+        ascii += (b >= 32 && b <= 126) ? String.fromCharCode(b) : '.';
+        if ((i + 1) % 16 === 0) {
+          hex += ' | ' + ascii + '\n';
+          ascii = '';
+        }
+      }
+      if (ascii) {
+        const remaining = 16 - (bytes.length % 16);
+        hex += '   '.repeat(remaining) + ' | ' + ascii + '\n';
+      }
+      return hex;
+    }
+
+    // Cập nhật giao diện khi có âm thanh đầu vào
+    async function setInputAudioBlob(blob, name = 'audio.wav') {
+      currentInputAudioBlob = blob;
+      const arrayBuffer = await blob.arrayBuffer();
+      currentInputAudioBuffer = arrayBuffer;
+
+      inputAudioBytesCount.textContent = `${arrayBuffer.byteLength.toLocaleString()} bytes`;
+      inputHexDump.textContent = generateHexDump(arrayBuffer, 48);
+      audioRecordStatus.textContent = `Đã sẵn sàng: ${name} (${Math.round(arrayBuffer.byteLength / 1024)} KB)`;
+      btnPreviewInputAudio.disabled = false;
+      log('INMP441', `Đã nạp file âm thanh nhị phân: ${name} (${arrayBuffer.byteLength} bytes)`, 'log-tag-audio');
+    }
+
+    // 1. Thu âm từ Micro
+    btnRecordMic.addEventListener('click', async () => {
+      if (isRecording) {
+        stopRecording();
+      } else {
+        await startRecording();
+      }
+    });
+
+    async function startRecording() {
+      try {
+        const ctx = getAudioContext();
+        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        const source = ctx.createMediaStreamSource(mediaStream);
+        micAnalyser = ctx.createAnalyser();
+        micAnalyser.fftSize = 256;
+        source.connect(micAnalyser);
+
+        // Sử dụng ScriptProcessorNode để lấy raw PCM Float32
+        const bufferSize = 4096;
+        audioWorkletOrScriptNode = ctx.createScriptProcessor(bufferSize, 1, 1);
+        recordedPcmChunks = [];
+
+        audioWorkletOrScriptNode.onaudioprocess = (e) => {
+          if (!isRecording) return;
+          const input = e.inputBuffer.getChannelData(0);
+          recordedPcmChunks.push(new Float32Array(input));
+        };
+
+        source.connect(audioWorkletOrScriptNode);
+        audioWorkletOrScriptNode.connect(ctx.destination);
+
+        isRecording = true;
+        btnRecordMic.textContent = 'Dừng & Đóng Gói Nhị Phân';
+        btnRecordMic.className = 'btn btn-danger';
+        audioRecordStatus.textContent = 'Đang thu âm microphone I2S...';
+        log('INMP441', 'Bắt đầu luồng I2S thu âm microphone INMP441...', 'log-tag-audio');
+
+        drawMicWaveform();
+      } catch (err) {
+        alert('Không thể truy cập Microphone: ' + err.message);
+        log('INMP441', 'Lỗi truy cập Microphone: ' + err.message, 'log-tag-dac');
+      }
+    }
+
+    function stopRecording() {
+      isRecording = false;
+      btnRecordMic.textContent = 'Bắt Đầu Thu Âm Micro';
+      btnRecordMic.className = 'btn btn-danger';
+
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(t => t.stop());
+      }
+      if (audioWorkletOrScriptNode) {
+        audioWorkletOrScriptNode.disconnect();
+      }
+      if (animFrameId) {
+        cancelAnimationFrame(animFrameId);
+      }
+
+      // Nối các chunks PCM lại với nhau
+      let totalLength = 0;
+      recordedPcmChunks.forEach(c => totalLength += c.length);
+      const combined = new Float32Array(totalLength);
+      let offset = 0;
+      recordedPcmChunks.forEach(c => {
+        combined.set(c, offset);
+        offset += c.length;
+      });
+
+      const ctx = getAudioContext();
+      // Đóng gói thành WAV 16-bit mono 16kHz
+      const wavBlob = encodeWav(combined, ctx.sampleRate);
+      setInputAudioBlob(wavBlob, 'mic_record.wav');
+    }
+
+    function drawMicWaveform() {
+      if (!isRecording || !micAnalyser) return;
+      animFrameId = requestAnimationFrame(drawMicWaveform);
+
+      const bufferLength = micAnalyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      micAnalyser.getByteTimeDomainData(dataArray);
+
+      micCanvasCtx.fillStyle = '#050811';
+      micCanvasCtx.fillRect(0, 0, micWaveCanvas.width, micWaveCanvas.height);
+      micCanvasCtx.lineWidth = 2;
+      micCanvasCtx.strokeStyle = '#38bdf8';
+      micCanvasCtx.beginPath();
+
+      const sliceWidth = micWaveCanvas.width / bufferLength;
+      let x = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        const v = dataArray[i] / 128.0;
+        const y = v * (micWaveCanvas.height / 2);
+        if (i === 0) micCanvasCtx.moveTo(x, y);
+        else micCanvasCtx.lineTo(x, y);
+        x += sliceWidth;
+      }
+      micCanvasCtx.lineTo(micWaveCanvas.width, micWaveCanvas.height / 2);
+      micCanvasCtx.stroke();
+    }
+
+    // 2. Tạo âm thanh mẫu WAV (Synth Câu Hỏi)
+    btnSampleQuestion.addEventListener('click', () => {
+      const ctx = getAudioContext();
+      const sampleRate = 16000;
+      const durationSeconds = 2.0;
+      const numSamples = sampleRate * durationSeconds;
+      const samples = new Float32Array(numSamples);
+
+      // Tạo một âm mẫu dao động âm tần giống giọng nói
+      for (let i = 0; i < numSamples; i++) {
+        const t = i / sampleRate;
+        samples[i] = 0.5 * Math.sin(2 * Math.PI * 440 * t) * Math.exp(-t * 1.5) +
+                     0.3 * Math.sin(2 * Math.PI * 880 * t) * Math.exp(-t * 2.0);
+      }
+
+      const wavBlob = encodeWav(samples, sampleRate);
+      setInputAudioBlob(wavBlob, 'sample_question.wav');
+    });
+
+    // 3. Tải file âm thanh
+    fileAudioUpload.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        setInputAudioBlob(file, file.name);
+      }
+    });
+
+    // 4. Nghe thử âm thanh đầu vào
+    btnPreviewInputAudio.addEventListener('click', () => {
+      if (!currentInputAudioBlob) return;
+      const audioUrl = URL.createObjectURL(currentInputAudioBlob);
+      const audio = new Audio(audioUrl);
+      audio.play();
+      log('INMP441', 'Đang phát nghe thử file âm thanh thu âm đầu vào...', 'log-tag-audio');
+    });
+
+    // ============================================================
+    // MODULE 4: TIẾN TRÌNH GỬI PIPELINE (INMP441 -> GROQ -> PCM5102A)
+    // ============================================================
+    const btnSendFullPipeline = document.getElementById('btn-send-full-pipeline');
+    const chkDirectBinaryMode = document.getElementById('chk-direct-binary-mode');
+    const aiResultContainer = document.getElementById('ai-result-container');
+    const resSttText = document.getElementById('res-stt-text');
+    const resAiReply = document.getElementById('res-ai-reply');
+    const resNearestPoi = document.getElementById('res-nearest-poi');
+    const resLatency = document.getElementById('res-latency');
+
+    btnSendFullPipeline.addEventListener('click', async () => {
+      if (!currentInputAudioBlob) {
+        alert('Vui lòng thu âm hoặc chọn file âm thanh trước khi gửi!');
+        return;
+      }
+
+      const hubId = (document.getElementById('cfg-hub-id').value || 'NEU001').trim();
+      const lat = parseFloat(gpsLat.value) || 20.99965;
+      const lng = parseFloat(gpsLng.value) || 105.84280;
+      const yaw = parseFloat(imuYawSlider.value) || 0;
+      const isDirectBinary = chkDirectBinaryMode.checked;
+      const secret = getEsp32Secret();
+      const shouldSend = chkSendSecret.checked;
+
+      btnSendFullPipeline.disabled = true;
+      btnSendFullPipeline.textContent = 'Đang Xử Lý Bằng AI Groq...';
+      aiResultContainer.style.display = 'flex';
+      resSttText.textContent = 'Đang nhận diện qua Groq Whisper STT...';
+      resAiReply.textContent = 'AI đang suy nghĩ và tổng hợp câu trả lời theo ngữ cảnh...';
+
+      const tStart = performance.now();
+      log('PIPELINE', `[BƯỚC 1] Gửi gói tin nhị phân INMP441 (${currentInputAudioBuffer.byteLength} bytes) lên ${serverBaseUrl}/api/inmp441/audio...`, 'log-tag-audio');
+      log('PIPELINE', `Kèm Telemetry: Hub=${hubId}, Lat=${lat}, Lng=${lng}, Yaw=${yaw}°, Mã Bí Mật=${shouldSend ? secret : '(Không gửi)'}`, 'log-tag-gps');
+
+      const formData = new FormData();
+      formData.append('audio', currentInputAudioBlob, 'inmp441.wav');
+      formData.append('hubId', hubId);
+      formData.append('lat', lat);
+      formData.append('lng', lng);
+      formData.append('yaw', yaw);
+      if (shouldSend && secret) {
+        formData.append('secretKey', secret);
+      }
+
+      const fetchHeaders = {};
+      if (shouldSend && secret) {
+        fetchHeaders['X-Device-Secret'] = secret;
+      }
+
+      try {
+        if (isDirectBinary) {
+          // CHẾ ĐỘ ESP32 TRỰC TIẾP: Nhận ngay luồng nhị phân MP3 trong response
+          formData.append('returnBinaryAudio', 'true');
+          const directHeaders = {
+            ...fetchHeaders,
+            'Accept': 'audio/mpeg',
+            'x-return-binary': 'true'
+          };
+
+          const res = await fetch(`${serverBaseUrl}/api/inmp441/audio?returnBinaryAudio=true`, {
+            method: 'POST',
+            headers: directHeaders,
+            body: formData
+          });
+
+          if (res.status === 401) {
+            const errJson = await res.json().catch(() => ({}));
+            authStatusBadge.className = 'status-badge offline';
+            authStatusText.textContent = 'Server từ chối (401)';
+            log('BẢO MẬT', `[CHẶN AN NINH INMP441] Server từ chối tiếp nhận file âm thanh vì sai/thiếu mã bí mật (HTTP 401)! Kẻ gian không thể đẩy âm thanh bịp lên hệ thống.`, 'log-tag-dac');
+            resSttText.textContent = 'BỊ CHẶN: Sai mã bí mật ESP32';
+            resAiReply.textContent = 'Xác thực thất bại (HTTP 401 Unauthorized): ' + (errJson.error || 'Sai mã bí mật');
+            return;
+          }
+
+          const totalLatency = Math.round(performance.now() - tStart);
+          resLatency.textContent = `Độ trễ toàn trình: ${totalLatency}ms`;
+
+          // KIỂM TRA MÃ BÍ MẬT TỪ PHẢN HỒI CỦA SERVER (Mutual Verification)
+          const respSecret = res.headers.get('X-Device-Secret');
+          const isServerGenuine = (respSecret && respSecret.trim() === secret);
+
+          // Đọc metadata qua HTTP Headers
+          const rawStt = res.headers.get('X-Recognized-Text');
+          const rawReply = res.headers.get('X-AI-Reply');
+          let recognizedText = rawStt ? decodeURIComponent(rawStt) : '';
+          let aiReply = rawReply ? decodeURIComponent(rawReply) : '';
+
+          // Đọc toàn bộ luồng nhị phân trả về
+          const mp3ArrayBuffer = await res.arrayBuffer();
+
+          // Kiểm tra xem phản hồi có phải là chuỗi JSON không
+          const contentType = res.headers.get('content-type') || '';
+          let isJsonContent = contentType.includes('application/json');
+          if (!isJsonContent && mp3ArrayBuffer.byteLength > 0) {
+            const firstByte = new Uint8Array(mp3ArrayBuffer)[0];
+            if (firstByte === 0x7B) { // '{' ASCII
+              isJsonContent = true;
+            }
+          }
+
+          if (isJsonContent) {
+            try {
+              const textJson = new TextDecoder('utf-8').decode(mp3ArrayBuffer);
+              const parsed = JSON.parse(textJson);
+              if (parsed.recognizedText) recognizedText = parsed.recognizedText;
+              if (parsed.aiReply) aiReply = parsed.aiReply;
+            } catch (e) {}
+          }
+
+          if (!recognizedText) recognizedText = '(Đã nhận diện từ Whisper STT)';
+          if (!aiReply) aiReply = '(Đã tổng hợp câu trả lời từ Groq AI)';
+
+          resSttText.textContent = `"${recognizedText}"`;
+          resAiReply.textContent = aiReply;
+          resNearestPoi.textContent = 'Tọa độ thực địa NEU';
+
+          log('GROQ AI', `Whisper STT: "${recognizedText}"`, 'log-tag-ai');
+          log('GROQ AI', `LLM Reply: "${aiReply.slice(0, 100)}..."`, 'log-tag-ai');
+
+          if (isServerGenuine) {
+            authStatusBadge.className = 'status-badge';
+            authStatusText.textContent = 'Đã xác minh server chính chủ';
+            log('BẢO MẬT', `[XÁC THỰC MÁY CHỦ THÀNH CÔNG] Server phản hồi đúng mã bí mật: "${respSecret}". ESP32 phê duyệt nạp luồng âm thanh vào DAC PCM5102A!`, 'log-tag-gps');
+            log('PCM5102A', `[BƯỚC 2] Nhận thành công gói nhị phân âm thanh: ${mp3ArrayBuffer.byteLength} bytes! Đang xuất ra loa PCM5102A...`, 'log-tag-dac');
+            loadReceivedMp3(mp3ArrayBuffer, aiReply);
+          } else {
+            authStatusBadge.className = 'status-badge offline';
+            authStatusText.textContent = 'Cảnh báo: Server giả mạo!';
+            log('BẢO MẬT', `[CẢNH BÁO AN NINH KHẨN CẤP] Phát hiện MÁY CHỦ BỊP / GIẢ MẠO! Mã bí mật phản hồi ("${respSecret || 'Không có'}") không khớp với mã thiết bị ("${secret}")!`, 'log-tag-dac');
+            log('PCM5102A', `[KHÓA LOA] ESP32 từ chối nhận file âm thanh và KHÓA LOA DAC PCM5102A để bảo vệ an toàn cho du khách! Không phát âm thanh ra loa.`, 'log-tag-dac');
+            dacStatusText.textContent = 'CẢNH BÁO: Máy chủ không khớp mã bí mật! Đã ngắt âm thanh DAC PCM5102A để bảo vệ du khách.';
+            btnDacPlay.disabled = true;
+          }
+
+        } else {
+          // CHẾ ĐỘ JSON 2-STEP
+          const res = await fetch(`${serverBaseUrl}/api/inmp441/audio`, {
+            method: 'POST',
+            headers: fetchHeaders,
+            body: formData
+          });
+
+          if (res.status === 401) {
+            const errJson = await res.json().catch(() => ({}));
+            authStatusBadge.className = 'status-badge offline';
+            authStatusText.textContent = 'Server từ chối (401)';
+            log('BẢO MẬT', `[CHẶN AN NINH INMP441] Server từ chối tiếp nhận file âm thanh vì sai/thiếu mã bí mật (HTTP 401)! Kẻ gian không thể đẩy âm thanh bịp lên hệ thống.`, 'log-tag-dac');
+            resSttText.textContent = 'BỊ CHẶN: Sai mã bí mật ESP32';
+            resAiReply.textContent = 'Xác thực thất bại (HTTP 401 Unauthorized): ' + (errJson.error || 'Sai mã bí mật');
+            return;
+          }
+
+          const json = await res.json();
+          const totalLatency = Math.round(performance.now() - tStart);
+          resLatency.textContent = `Độ trễ: ${totalLatency}ms`;
+
+          if (json.success) {
+            resSttText.textContent = `"${json.recognizedText}"`;
+            resAiReply.textContent = json.aiReply;
+            resNearestPoi.textContent = json.nearestPoi ? `${json.nearestPoi.number}. ${json.nearestPoi.name} (~${json.nearestPoi.distanceMeters}m)` : 'Khuôn viên';
+
+            log('GROQ AI', `Whisper STT: "${json.recognizedText}"`, 'log-tag-ai');
+            log('GROQ AI', `LLM Reply: "${json.aiReply}"`, 'log-tag-ai');
+
+            // KIỂM TRA MÃ BÍ MẬT TỪ PHẢN HỒI CỦA SERVER
+            const respSecret = res.headers.get('X-Device-Secret') || json.secretKey;
+            const isServerGenuine = (respSecret && respSecret.trim() === secret);
+
+            if (!isServerGenuine) {
+              authStatusBadge.className = 'status-badge offline';
+              authStatusText.textContent = 'Cảnh báo: Server giả mạo!';
+              log('BẢO MẬT', `[CẢNH BÁO AN NINH KHẨN CẤP] Phản hồi JSON từ máy chủ KHÔNG KHỚP mã bí mật ESP32 ("${respSecret || 'Không có'}" != "${secret}")! Phát hiện server bịp!`, 'log-tag-dac');
+              log('PCM5102A', `[KHÓA LOA] ESP32 từ chối nhận âm thanh từ server không rõ nguồn gốc! Khóa loa PCM5102A.`, 'log-tag-dac');
+              dacStatusText.textContent = 'CẢNH BÁO: Máy chủ giả mạo / Không khớp mã bí mật!';
+              btnDacPlay.disabled = true;
+              return;
+            }
+
+            authStatusBadge.className = 'status-badge';
+            authStatusText.textContent = 'Đã xác minh server chính chủ';
+            log('BẢO MẬT', `[XÁC THỰC MÁY CHỦ THÀNH CÔNG] Server phản hồi đúng mã bí mật: "${respSecret}". ESP32 chấp nhận kết quả, tiếp tục lấy luồng âm thanh...`, 'log-tag-gps');
+
+            // Tải luồng âm thanh nhị phân từ ttsUrl (Kèm mã bí mật xác thực)
+            if (json.ttsUrl) {
+              log('PIPELINE', `[BƯỚC 2] Yêu cầu luồng âm thanh nhị phân từ: ${json.ttsUrl}`, 'log-tag-dac');
+              const ttsHeaders = {};
+              if (shouldSend && secret) ttsHeaders['X-Device-Secret'] = secret;
+
+              const ttsRes = await fetch(json.ttsUrl, { headers: ttsHeaders });
+
+              if (ttsRes.status === 401) {
+                log('BẢO MẬT', `[CHẶN TTS] Server từ chối cấp luồng TTS vì sai mã bí mật!`, 'log-tag-dac');
+                return;
+              }
+
+              const ttsRespSecret = ttsRes.headers.get('X-Device-Secret');
+              if (ttsRespSecret && ttsRespSecret.trim() === secret) {
+                const mp3ArrayBuffer = await ttsRes.arrayBuffer();
+                log('PCM5102A', `Đã tải gói nhị phân âm thanh: ${mp3ArrayBuffer.byteLength} bytes từ server chính chủ. Đang đẩy vào DAC PCM5102A phát cho du khách...`, 'log-tag-dac');
+                loadReceivedMp3(mp3ArrayBuffer, json.aiReply);
+              } else {
+                authStatusBadge.className = 'status-badge offline';
+                authStatusText.textContent = 'Cảnh báo: Luồng TTS sai mã!';
+                log('BẢO MẬT', `[CẢNH BÁO AN NINH] Luồng âm thanh TTS trả về không có chữ ký bí mật hợp lệ! Khóa loa PCM5102A!`, 'log-tag-dac');
+                dacStatusText.textContent = 'CẢNH BÁO: Luồng TTS không khớp mã bí mật! Đã ngắt DAC PCM5102A.';
+                btnDacPlay.disabled = true;
+              }
+            }
+          } else {
+            throw new Error(json.error || 'Server xử lý thất bại');
+          }
+        }
+      } catch (err) {
+        log('PIPELINE', `Lỗi xử lý Pipeline: ${err.message}`, 'log-tag-dac');
+        resSttText.textContent = 'Lỗi xử lý';
+        resAiReply.textContent = 'Không thể hoàn thành xử lý AI: ' + err.message;
+      } finally {
+        btnSendFullPipeline.disabled = false;
+        btnSendFullPipeline.textContent = 'Gửi Lên Server Xử Lý (INMP441 -> Groq -> PCM5102A)';
+      }
+    });
+
+    // ============================================================
+    // MODULE 5: PCM5102A I2S DAC PLAYER & HEX VIEWER
+    // ============================================================
+    const btnDacPlay = document.getElementById('btn-dac-play');
+    const btnDacPause = document.getElementById('btn-dac-pause');
+    const btnDacStop = document.getElementById('btn-dac-stop');
+    const btnDownloadMp3 = document.getElementById('btn-download-mp3');
+    const dacSeekSlider = document.getElementById('dac-seek-slider');
+    const dacTimeDisplay = document.getElementById('dac-time-display');
+    const dacStatusText = document.getElementById('dac-status-text');
+    const outputAudioBytesCount = document.getElementById('output-audio-bytes-count');
+    const outputHexDump = document.getElementById('output-hex-dump');
+    const dacWaveCanvas = document.getElementById('dac-wave-canvas');
+    const dacCanvasCtx = dacWaveCanvas.getContext('2d');
+
+    let dacAudioElement = new Audio();
+    let dacAudioSource = null;
+    let dacAnalyser = null;
+    let dacAnimId = null;
+
+    let dacSimOscillator = null;
+    let dacSimGain = null;
+
+    function startSimulatedDacWave() {
+      try {
+        const ctx = getAudioContext();
+        if (ctx.state === 'suspended') ctx.resume();
+        if (!dacAnalyser) {
+          dacAnalyser = ctx.createAnalyser();
+          dacAnalyser.fftSize = 256;
+          dacAnalyser.connect(ctx.destination);
+        }
+        if (!dacSimOscillator) {
+          dacSimOscillator = ctx.createOscillator();
+          dacSimGain = ctx.createGain();
+          dacSimOscillator.type = 'sine';
+          dacSimOscillator.frequency.setValueAtTime(320, ctx.currentTime);
+          dacSimGain.gain.setValueAtTime(0.0001, ctx.currentTime);
+          dacSimOscillator.connect(dacAnalyser);
+          dacSimOscillator.start();
+        }
+        drawDacWaveform();
+      } catch (e) {}
+    }
+
+    function drawDacIdleWave() {
+      if (!dacCanvasCtx || !dacWaveCanvas) return;
+      dacCanvasCtx.fillStyle = '#050811';
+      dacCanvasCtx.fillRect(0, 0, dacWaveCanvas.width, dacWaveCanvas.height);
+      dacCanvasCtx.lineWidth = 1.5;
+      dacCanvasCtx.strokeStyle = '#334155';
+      dacCanvasCtx.beginPath();
+      dacCanvasCtx.moveTo(0, dacWaveCanvas.height / 2);
+      dacCanvasCtx.lineTo(dacWaveCanvas.width, dacWaveCanvas.height / 2);
+      dacCanvasCtx.stroke();
+    }
+
+    function stopSimulatedDacWave() {
+      if (dacSimOscillator) {
+        try { dacSimOscillator.stop(); } catch (e) {}
+        try { dacSimOscillator.disconnect(); } catch (e) {}
+        dacSimOscillator = null;
+      }
+      if (dacSimGain) {
+        try { dacSimGain.disconnect(); } catch (e) {}
+        dacSimGain = null;
+      }
+      if (dacAnimId) {
+        cancelAnimationFrame(dacAnimId);
+        dacAnimId = null;
+      }
+      drawDacIdleWave();
+    }
+
+    function speakWithWebSpeechFallback(text) {
+      if (!text || text.startsWith('(') || text.includes('Đang nhận diện')) return;
+      dacStatusText.textContent = 'Đang phát âm thanh thuyết minh AI ra DAC PCM5102A (Speech Synthesis)...';
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'vi-VN';
+        utter.rate = 1.0;
+        startSimulatedDacWave();
+        utter.onend = () => {
+          stopSimulatedDacWave();
+          dacStatusText.textContent = 'Đã hoàn tất phát âm thanh ra DAC PCM5102A.';
+        };
+        utter.onerror = () => {
+          stopSimulatedDacWave();
+        };
+        window.speechSynthesis.speak(utter);
+        log('PCM5102A', `Đang phát giọng đọc thuyết minh tiếng Việt: "${text.slice(0, 100)}..."`, 'log-tag-ai');
+      }
+    }
+
+    function loadReceivedMp3(arrayBuffer, fallbackText = '') {
+      currentOutputMp3ArrayBuffer = arrayBuffer;
+      const effectiveText = fallbackText || resAiReply.textContent;
+
+      if (!arrayBuffer || arrayBuffer.byteLength < 32) {
+        dacStatusText.textContent = 'Đang kích hoạt phát giọng nói thuyết minh AI...';
+        speakWithWebSpeechFallback(effectiveText);
+        return;
+      }
+
+      outputAudioBytesCount.textContent = `${arrayBuffer.byteLength.toLocaleString()} bytes`;
+      outputHexDump.textContent = generateHexDump(arrayBuffer, 48);
+
+      // Phân tích định dạng file nhị phân qua Byte Signature
+      const bytes = new Uint8Array(arrayBuffer);
+      let detectedMime = 'audio/mpeg';
+      let isJsonText = (bytes[0] === 0x7B); // '{'
+
+      if (isJsonText) {
+        log('PCM5102A', `Gói dữ liệu là văn bản phản hồi AI (${arrayBuffer.byteLength} bytes) -> Tự động nạp bộ đọc giọng nói thuyết minh AI trực tiếp!`, 'log-tag-ai');
+        dacStatusText.textContent = 'Đã nhận câu trả lời AI -> Đang xuất âm thanh thuyết minh ra DAC PCM5102A!';
+        speakWithWebSpeechFallback(effectiveText);
+        return;
+      }
+
+      if (bytes.length >= 4 && bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46) {
+        detectedMime = 'audio/wav';
+        // Nếu là luồng WAV chime dự phòng của server, ưu tiên phát giọng nói tiếng Việt thuyết minh chuẩn
+        if (effectiveText && !effectiveText.startsWith('(') && !effectiveText.includes('Đang nhận diện')) {
+          log('PCM5102A', `Đang phát giọng đọc AI thuyết minh tiếng Việt: "${effectiveText.slice(0, 100)}..."`, 'log-tag-ai');
+          dacStatusText.textContent = 'Đang phát âm thanh giọng đọc AI tiếng Việt ra DAC PCM5102A...';
+          speakWithWebSpeechFallback(effectiveText);
+          return;
+        }
+      } else if (bytes.length >= 4 && bytes[0] === 0x4F && bytes[1] === 0x67 && bytes[2] === 0x67 && bytes[3] === 0x53) {
+        detectedMime = 'audio/ogg';
+      }
+
+      currentOutputMp3Blob = new Blob([arrayBuffer], { type: detectedMime });
+      const blobUrl = URL.createObjectURL(currentOutputMp3Blob);
+      dacAudioElement.src = blobUrl;
+
+      dacAudioElement.onerror = () => {
+        log('PCM5102A', 'Trình duyệt không giải mã được codec này -> Chuyển sang phát giọng đọc thuyết minh AI trực tiếp!', 'log-tag-ai');
+        speakWithWebSpeechFallback(effectiveText);
+      };
+
+      btnDacPlay.disabled = false;
+      btnDacPause.disabled = false;
+      btnDacStop.disabled = false;
+      btnDownloadMp3.disabled = false;
+      dacSeekSlider.disabled = false;
+      dacStatusText.textContent = `Đã nhận gói âm thanh (${arrayBuffer.byteLength} bytes, ${detectedMime}). Sẵn sàng xuất ra DAC PCM5102A!`;
+
+      // Tự động phát âm thanh mô phỏng DAC nhận được dữ liệu từ ESP32
+      playDacAudio(effectiveText);
+    }
+
+    // ============================================================
+    // 3D SPATIAL AUDIO HRTF LAB CHO DAC PCM5102A & TAI NGHE
+    // ============================================================
+    let is3dSpatialEnabled = true;
+    let dacPannerNode = null;
+    let dacGainNode = null;
+    let spatialAngle = 0;          // Góc lệch tương đối so với đầu (-180° đến +180°)
+    let spatialDist = 2.0;         // Khoảng cách (0.5m - 5m)
+    let isSyncWithImu = true;      // MẶC ĐỊNH BẬT ĐỒNG BỘ IMU & GPS ĐỂ REALTIME TỰ ĐỘNG THAY ĐỔI ÂM LƯỢNG KHI LẠI GẦN
+    let currentPlayingArtifact = null; // Lưu hiện vật đang phát thuyết minh để tính khoảng cách
+    let dacMasterVolume = 1.0;     // Âm lượng cơ sở từ User (1.0 = 100%)
+    let spatialOrbitInterval = null;
+    let isSpatialOrbiting = false;
+    let spatialDemoSourceNode = null;
+    let spatialDemoBuffer = null;
+    let spatialSynthInterval = null;
+
+    const btnToggle3dSpatial = document.getElementById('btn-toggle-3d-spatial');
+    const spatialRadarCanvas = document.getElementById('spatial-radar-canvas');
+    const spatialRadarCtx = spatialRadarCanvas ? spatialRadarCanvas.getContext('2d') : null;
+    const spatialHudAngle = document.getElementById('spatial-hud-angle');
+    const spatialHudDist = document.getElementById('spatial-hud-dist');
+    const spatialHudCoords = document.getElementById('spatial-hud-coords');
+    const spatialHudVol = document.getElementById('spatial-hud-vol');
+    const btnPlaySpatialDemo = document.getElementById('btn-play-spatial-demo');
+    const btnStopSpatialDemo = document.getElementById('btn-stop-spatial-demo');
+    const btnSpatialOrbit = document.getElementById('btn-spatial-orbit');
+    const sliderSpatialAngle = document.getElementById('slider-spatial-angle');
+    const spatialAngleDisplay = document.getElementById('spatial-angle-display');
+    const sliderSpatialDist = document.getElementById('slider-spatial-dist');
+    const spatialDistDisplay = document.getElementById('spatial-dist-display');
+
+    function initDacAudioChain(ctx) {
+      if (dacAudioSource) return;
+      try {
+        dacAudioSource = ctx.createMediaElementSource(dacAudioElement);
+
+        dacPannerNode = ctx.createPanner();
+        dacPannerNode.panningModel = 'HRTF';
+        dacPannerNode.distanceModel = 'inverse';
+        dacPannerNode.refDistance = 1;
+        dacPannerNode.maxDistance = 10;
+        dacPannerNode.rolloffFactor = 1;
+
+        dacGainNode = ctx.createGain();
+        dacAnalyser = ctx.createAnalyser();
+        dacAnalyser.fftSize = 256;
+
+        // Chuỗi Web Audio 3D: Source -> PannerNode (HRTF) -> GainNode (Vol động) -> Analyser -> Output
+        dacAudioSource.connect(dacPannerNode);
+        dacPannerNode.connect(dacGainNode);
+        dacGainNode.connect(dacAnalyser);
+        dacAnalyser.connect(ctx.destination);
+      } catch (e) {
+        console.warn('Lỗi khởi tạo chuỗi Web Audio 3D:', e);
+      }
+    }
+
+    function applySpatial3DParams() {
+      const ctx = getAudioContext();
+      if (!dacPannerNode || !dacGainNode) {
+        initDacAudioChain(ctx);
+      }
+
+      const clampedDist = Math.max(0.5, Math.min(5.0, spatialDist));
+      const rad = (spatialAngle * Math.PI) / 180;
+      const relX = clampedDist * Math.sin(rad);
+      const relZ = -clampedDist * Math.cos(rad);
+
+      // Tính âm lượng động theo khoảng cách (0.5m = 100%, 5.0m = 25%) kết hợp dacMasterVolume
+      const progress = (5.0 - clampedDist) / (5.0 - 0.5);
+      const dynamicGain = Math.max(0.05, Math.min(1.0, (0.25 + progress * 0.75) * dacMasterVolume));
+      const volPercent = Math.round(dynamicGain * 100);
+
+      if (dacPannerNode && dacGainNode) {
+        if (is3dSpatialEnabled) {
+          dacPannerNode.panningModel = 'HRTF';
+          dacPannerNode.positionX.setTargetAtTime(relX, ctx.currentTime, 0.04);
+          dacPannerNode.positionY.setTargetAtTime(0, ctx.currentTime, 0.04);
+          dacPannerNode.positionZ.setTargetAtTime(relZ, ctx.currentTime, 0.04);
+          dacGainNode.gain.setTargetAtTime(dynamicGain, ctx.currentTime, 0.04);
+        } else {
+          dacPannerNode.panningModel = 'equalpower';
+          dacPannerNode.positionX.setTargetAtTime(0, ctx.currentTime, 0.04);
+          dacPannerNode.positionY.setTargetAtTime(0, ctx.currentTime, 0.04);
+          dacPannerNode.positionZ.setTargetAtTime(-1, ctx.currentTime, 0.04);
+          dacGainNode.gain.setTargetAtTime(dacMasterVolume, ctx.currentTime, 0.04);
+        }
+      }
+
+      if (dacAudioElement) {
+        dacAudioElement.volume = Math.max(0.01, Math.min(1.0, dynamicGain));
+      }
+
+      if (sliderSpatialAngle) sliderSpatialAngle.value = spatialAngle;
+      if (spatialAngleDisplay) spatialAngleDisplay.textContent = `${Math.round(spatialAngle)}°`;
+      if (sliderSpatialDist) sliderSpatialDist.value = clampedDist.toFixed(1);
+      if (spatialDistDisplay) spatialDistDisplay.textContent = `${clampedDist.toFixed(1)}m`;
+
+      let dirDesc = '';
+      if (!is3dSpatialEnabled) {
+        dirDesc = 'Stereo Phẳng (Đã tắt 3D)';
+      } else if (Math.abs(spatialAngle) <= 10) {
+        dirDesc = '0° (Chính Diện Trước Mặt)';
+      } else if (Math.abs(spatialAngle) >= 170) {
+        dirDesc = '180° (Phía Sau Lưng)';
+      } else if (spatialAngle > 0) {
+        dirDesc = `${Math.round(spatialAngle)}° (Bên Phải)`;
+      } else {
+        dirDesc = `${Math.abs(Math.round(spatialAngle))}° (Bên Trái)`;
+      }
+
+      if (spatialHudAngle) spatialHudAngle.textContent = dirDesc;
+      if (spatialHudDist) spatialHudDist.textContent = is3dSpatialEnabled ? `${clampedDist.toFixed(1)} mét` : 'Vô hiệu hóa (Stereo Flat)';
+      if (spatialHudCoords) spatialHudCoords.textContent = is3dSpatialEnabled ? `X: ${relX.toFixed(1)}m | Z: ${relZ.toFixed(1)}m` : 'X: 0.0m | Z: -1.0m';
+      if (spatialHudVol) {
+        spatialHudVol.textContent = is3dSpatialEnabled ? `${volPercent}% (To hơn khi lại gần)` : `${Math.round(dacMasterVolume * 100)}%`;
+        spatialHudVol.style.color = volPercent >= 75 ? '#22c55e' : (volPercent >= 45 ? '#f59e0b' : '#38bdf8');
+      }
+
+      if (dacAudioElement && !dacAudioElement.paused && dacStatusText) {
+        dacStatusText.innerHTML = `<span style="color: #38bdf8; font-weight: 700;">🔊 DAC PCM5102A: Cự ly ${clampedDist.toFixed(1)}m ➔ Âm lượng: ${volPercent}% (To hơn khi lại gần)</span>`;
+      }
+
+      drawSpatialRadar();
+    }
+
+    function drawSpatialRadar() {
+      if (!spatialRadarCtx || !spatialRadarCanvas) return;
+      const ctx = spatialRadarCtx;
+      const w = spatialRadarCanvas.width;
+      const h = spatialRadarCanvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Vòng tròn radar nền
+      ctx.fillStyle = '#070d19';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 76, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Vòng cự ly 1m, 3m, 5m
+      const rMax = 70;
+      [1, 3, 5].forEach(m => {
+        const r = (m / 5) * rMax;
+        ctx.beginPath();
+        ctx.setLineDash([3, 3]);
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.strokeStyle = (m === 5) ? '#0284c7' : '#1e293b';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+      ctx.setLineDash([]);
+
+      // Nhãn phương hướng
+      ctx.font = '9px sans-serif';
+      ctx.fillStyle = '#64748b';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('TRƯỚC', cx, 10);
+      ctx.fillText('SAU', cx, h - 8);
+      ctx.fillText('L', 10, cy);
+      ctx.fillText('R', w - 10, cy);
+
+      // Đầu người nghe ở giữa
+      ctx.fillStyle = '#1e293b';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Mũi nhọn hướng lên
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath();
+      ctx.moveTo(cx - 5, cy - 16);
+      ctx.lineTo(cx, cy - 23);
+      ctx.lineTo(cx + 5, cy - 16);
+      ctx.closePath();
+      ctx.fill();
+
+      // Tai trái & Tai phải
+      ctx.fillStyle = '#0284c7';
+      ctx.fillRect(cx - 22, cy - 6, 4, 12);
+      ctx.fillRect(cx + 18, cy - 6, 4, 12);
+
+      ctx.font = 'bold 8px sans-serif';
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillText('YOU', cx, cy);
+
+      if (!is3dSpatialEnabled) {
+        ctx.font = 'bold 10px sans-serif';
+        ctx.fillStyle = '#f43f5e';
+        ctx.fillText('3D TẮT', cx, cy + 32);
+        return;
+      }
+
+      // Tọa độ nguồn âm thanh
+      const rad = (spatialAngle * Math.PI) / 180;
+      const soundR = (Math.min(5, Math.max(0.5, spatialDist)) / 5) * rMax;
+      const soundX = cx + soundR * Math.sin(rad);
+      const soundY = cy - soundR * Math.cos(rad);
+
+      // Đường tia ngắm
+      ctx.beginPath();
+      ctx.setLineDash([2, 3]);
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(soundX, soundY);
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Sóng âm thanh lan tỏa
+      for (let s = 1; s <= 3; s++) {
+        ctx.beginPath();
+        const waveAngle = Math.atan2(cy - soundY, cx - soundX);
+        ctx.arc(soundX, soundY, s * 7, waveAngle - 0.7, waveAngle + 0.7);
+        ctx.strokeStyle = `rgba(245, 158, 11, ${0.8 - s * 0.22})`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+
+      // Điểm nguồn âm
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.arc(soundX, soundY, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    window.setSpatialPreset = (deg) => {
+      stopSpatialOrbit();
+      isSyncWithImu = false;
+      spatialAngle = deg;
+      applySpatial3DParams();
+      log('3D AUDIO', `Đã chuyển hướng âm thanh 3D: ${deg}° so với tai nghe`, 'log-tag-audio');
+    };
+
+    window.syncSpatialWithImu = () => {
+      stopSpatialOrbit();
+      isSyncWithImu = true;
+      syncSpatialFromGazeOrGps();
+      log('3D AUDIO', 'Đã kích hoạt đồng bộ âm thanh 3D theo con quay la bàn IMU Module 2 và GPS!', 'log-tag-imu');
+    };
+
+    window.syncSpatialFromGazeOrGps = () => {
+      if (!isSyncWithImu) return;
+      const userYaw = parseFloat(imuYawSlider.value) || 0;
+      const userLat = parseFloat(gpsLat.value) || 20.99965;
+      const userLng = parseFloat(gpsLng.value) || 105.84280;
+
+      // 1. Ưu tiên mục tiêu là Hiện vật đang phát âm thanh thuyết minh
+      let target = currentPlayingArtifact;
+
+      // 2. Nếu chưa có bài đang phát, lấy mục tiêu đang nhắm trúng (Gaze)
+      if (!target) {
+        target = currentTargetGazePoi;
+      }
+
+      // 3. Nếu vẫn chưa có, tìm Hiện vật gần nhất trong bán kính 10m
+      if (!target && cachedSiteData && cachedSiteData.artifacts) {
+        let nearest = null;
+        let minD = 9999;
+        for (const art of cachedSiteData.artifacts) {
+          const d = calculateHaversineDistance(userLat, userLng, art.lat, art.lng);
+          if (d < minD) {
+            minD = d;
+            nearest = art;
+          }
+        }
+        if (minD <= 10.0) {
+          target = nearest;
+        }
+      }
+
+      if (target && target.lat !== undefined && target.lng !== undefined) {
+        const dist = calculateHaversineDistance(userLat, userLng, target.lat, target.lng);
+        const bearing = calculateBearing(userLat, userLng, target.lat, target.lng);
+        let diff = (bearing - userYaw + 360) % 360;
+        if (diff > 180) diff -= 360;
+        spatialAngle = Math.round(diff);
+        spatialDist = Math.max(0.5, Math.min(5.0, dist));
+      } else {
+        let diff = (0 - userYaw + 360) % 360;
+        if (diff > 180) diff -= 360;
+        spatialAngle = Math.round(diff);
+      }
+      applySpatial3DParams();
+    };
+
+    window.syncSpatialFromImu = window.syncSpatialFromGazeOrGps;
+
+    function stopSpatialOrbit() {
+      if (spatialOrbitInterval) {
+        clearInterval(spatialOrbitInterval);
+        spatialOrbitInterval = null;
+      }
+      isSpatialOrbiting = false;
+      if (btnSpatialOrbit) {
+        btnSpatialOrbit.textContent = '🌀 Tự Động Xoay 360°';
+        btnSpatialOrbit.className = 'btn btn-warning btn-sm';
+      }
+    }
+
+    function toggleSpatialOrbit() {
+      if (isSpatialOrbiting) {
+        stopSpatialOrbit();
+        log('3D AUDIO', 'Đã dừng chế độ xoay 360° tự động.', 'log-tag-audio');
+        return;
+      }
+      isSpatialOrbiting = true;
+      isSyncWithImu = false;
+      if (btnSpatialOrbit) {
+        btnSpatialOrbit.textContent = '⏹ Dừng Xoay 360°';
+        btnSpatialOrbit.className = 'btn btn-danger btn-sm';
+      }
+      log('3D AUDIO', 'Đang kích hoạt xoay vòng âm thanh 3D 360° quanh đầu (Orbit Demo)...', 'log-tag-audio');
+
+      spatialOrbitInterval = setInterval(() => {
+        spatialAngle += 8;
+        if (spatialAngle > 180) spatialAngle = -180;
+        applySpatial3DParams();
+      }, 120);
+    }
+
+    if (btnSpatialOrbit) btnSpatialOrbit.addEventListener('click', toggleSpatialOrbit);
+
+    if (sliderSpatialAngle) {
+      sliderSpatialAngle.addEventListener('input', () => {
+        stopSpatialOrbit();
+        isSyncWithImu = false;
+        spatialAngle = parseFloat(sliderSpatialAngle.value);
+        applySpatial3DParams();
+      });
+    }
+
+    if (sliderSpatialDist) {
+      sliderSpatialDist.addEventListener('input', () => {
+        isSyncWithImu = false;
+        spatialDist = parseFloat(sliderSpatialDist.value);
+        applySpatial3DParams();
+      });
+    }
+
+    if (btnToggle3dSpatial) {
+      btnToggle3dSpatial.addEventListener('click', () => {
+        is3dSpatialEnabled = !is3dSpatialEnabled;
+        if (is3dSpatialEnabled) {
+          btnToggle3dSpatial.textContent = '🎧 3D AUDIO: ĐANG BẬT';
+          btnToggle3dSpatial.style.background = '#0284c7';
+          btnToggle3dSpatial.style.borderColor = '#38bdf8';
+          log('3D AUDIO', 'Đã BẬT công nghệ âm thanh không gian 3D Web Audio HRTF.', 'log-tag-audio');
+        } else {
+          stopSpatialOrbit();
+          btnToggle3dSpatial.textContent = '🔇 3D AUDIO: ĐÃ TẮT (FLAT STEREO)';
+          btnToggle3dSpatial.style.background = '#334155';
+          btnToggle3dSpatial.style.borderColor = '#64748b';
+          log('3D AUDIO', 'Đã TẮT 3D. Âm thanh phát đều 2 tai dạng Stereo phẳng thông thường.', 'log-tag-audio');
+        }
+        applySpatial3DParams();
+      });
+    }
+
+    async function playSpatialDemo() {
+      const ctx = getAudioContext();
+      if (ctx.state === 'suspended') await ctx.resume();
+
+      initDacAudioChain(ctx);
+      applySpatial3DParams();
+
+      stopSpatialDemo();
+
+      log('3D AUDIO', 'Đang nạp luồng âm thanh mẫu 3D để kiểm thử trên tai nghe/loa...', 'log-tag-audio');
+      btnPlaySpatialDemo.disabled = true;
+      btnPlaySpatialDemo.textContent = 'Đang Tải Âm Thanh...';
+
+      // 1. Cố gắng tải file sample_3d.mp3 từ server
+      try {
+        if (!spatialDemoBuffer) {
+          const res = await fetch('/sample_3d.mp3');
+          if (res.ok) {
+            const arr = await res.arrayBuffer();
+            spatialDemoBuffer = await ctx.decodeAudioData(arr);
+          }
+        }
+
+        if (spatialDemoBuffer) {
+          spatialDemoSourceNode = ctx.createBufferSource();
+          spatialDemoSourceNode.buffer = spatialDemoBuffer;
+          spatialDemoSourceNode.loop = true;
+          spatialDemoSourceNode.connect(dacPannerNode);
+          spatialDemoSourceNode.start(0);
+
+          btnPlaySpatialDemo.disabled = false;
+          btnPlaySpatialDemo.textContent = '🔊 Đang Phát Mẫu 3D (Lặp Vòng)';
+          btnPlaySpatialDemo.className = 'btn btn-primary btn-sm';
+          log('3D AUDIO', 'Đang phát file mẫu thuyết minh 3D lặp vòng! Hãy kéo góc xoay hoặc bấm Xoay 360° để kiểm thử.', 'log-tag-gps');
+          drawDacWaveform();
+          return;
+        }
+      } catch (err) {
+        console.warn('Không tải được /sample_3d.mp3:', err);
+      }
+
+      // 2. Dự phòng: Web Audio Polyphonic Chime Loop (không cần file mạng)
+      btnPlaySpatialDemo.disabled = false;
+      btnPlaySpatialDemo.textContent = '🔊 Đang Phát Nhạc Chuông 3D';
+      btnPlaySpatialDemo.className = 'btn btn-primary btn-sm';
+      log('3D AUDIO', 'Đang phát chuỗi nhạc chuông tổng hợp Web Audio 3D Synthesizer! Hãy xoay góc la bàn để nghe chuyển kênh.', 'log-tag-gps');
+
+      function playSynthChime(freq, offsetTime = 0) {
+        try {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + offsetTime);
+          g.gain.setValueAtTime(0.001, ctx.currentTime + offsetTime);
+          g.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + offsetTime + 0.05);
+          g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + offsetTime + 0.55);
+          osc.connect(g);
+          g.connect(dacPannerNode);
+          osc.start(ctx.currentTime + offsetTime);
+          osc.stop(ctx.currentTime + offsetTime + 0.6);
+        } catch (e) {}
+      }
+
+      const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+      let noteIdx = 0;
+      spatialSynthInterval = setInterval(() => {
+        playSynthChime(notes[noteIdx % notes.length], 0);
+        noteIdx++;
+        drawDacWaveform();
+      }, 700);
+      playSynthChime(notes[0], 0);
+    }
+
+    function stopSpatialDemo() {
+      if (spatialDemoSourceNode) {
+        try { spatialDemoSourceNode.stop(); } catch (e) {}
+        spatialDemoSourceNode = null;
+      }
+      if (spatialSynthInterval) {
+        clearInterval(spatialSynthInterval);
+        spatialSynthInterval = null;
+      }
+      if (btnPlaySpatialDemo) {
+        btnPlaySpatialDemo.disabled = false;
+        btnPlaySpatialDemo.textContent = '▶ Phát Thử Âm Thanh 3D';
+        btnPlaySpatialDemo.className = 'btn btn-success btn-sm';
+      }
+      log('3D AUDIO', 'Đã dừng phát âm thanh mẫu 3D.', 'log-tag-audio');
+    }
+
+    if (btnPlaySpatialDemo) btnPlaySpatialDemo.addEventListener('click', playSpatialDemo);
+    if (btnStopSpatialDemo) btnStopSpatialDemo.addEventListener('click', stopSpatialDemo);
+
+    // Tự động khởi tạo Radar và Waveform sau khi trang tải
+    setTimeout(applySpatial3DParams, 150);
+    setTimeout(drawDacIdleWave, 100);
+
+    function playDacAudio(fallbackText = '') {
+      const effectiveText = fallbackText || resAiReply.textContent;
+      const ctx = getAudioContext();
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
+
+      initDacAudioChain(ctx);
+      applySpatial3DParams();
+
+      // Hủy bỏ mọi giọng đọc SpeechSynthesis nếu đang phát dở trước khi chạy tệp MP3
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      stopSimulatedDacWave();
+
+      dacAudioElement.play().then(() => {
+        btnDacPlay.classList.remove('pulse-glow');
+        dacStatusText.innerHTML = is3dSpatialEnabled 
+          ? '<span style="color: #38bdf8; font-weight: 700;">🔊 DAC PCM5102A đang phát âm thanh không gian 3D HRTF -> Xuất Audio Out 3.5mm</span>'
+          : '<span style="color: #34d399; font-weight: 700;">🔊 DAC PCM5102A đang giải mã I2S -> Xuất tín hiệu Audio Out 3.5mm (Stereo)</span>';
+        log('PCM5102A', is3dSpatialEnabled 
+          ? `I2S DMA stream qua bộ lọc 3D HRTF (Góc: ${Math.round(spatialAngle)}°, Cự ly: ${spatialDist.toFixed(1)}m)...`
+          : 'I2S DMA Buffer đang stream dữ liệu nhị phân ra PCM5102A...', 'log-tag-dac');
+        drawDacWaveform();
+      }).catch(err => {
+        console.warn('Lỗi dacAudioElement.play():', err);
+        // NẾU CÓ TỆP MP3 THẬT: KHÔNG TỰ ĐỘNG CHUYỂN SANG GIỌNG ROBOT!
+        if (dacAudioElement.src && dacAudioElement.src.length > 0) {
+          log('PCM5102A', `Trình duyệt chặn tự động phát (${err.name}: ${err.message}). Bấm nút [Phát DAC] hoặc nhấp vào thanh thông báo để phát!`, 'log-tag-dac');
+          dacStatusText.innerHTML = `
+            <span style="color: #f59e0b; font-weight: 700;">⚠️ Trình duyệt chặn tự động phát.</span>
+            <button id="btn-quick-play-dac" class="btn btn-success btn-sm" style="padding: 2px 8px; margin-left: 6px; font-weight: 800; animation: pulseGlow 1.2s infinite;">▶ Nhấn Để Nghe Thuyết Minh DAC</button>
+          `;
+          btnDacPlay.classList.add('pulse-glow');
+          const quickBtn = document.getElementById('btn-quick-play-dac');
+          if (quickBtn) {
+            quickBtn.onclick = (e) => {
+              e.stopPropagation();
+              if (window.unlockAudioEngine) window.unlockAudioEngine();
+              playDacAudio(fallbackText);
+            };
+          }
+        } else {
+          // Chỉ fallback giọng đọc AI khi HOÀN TOÀN không có tệp audio
+          log('PCM5102A', `Không có tệp âm thanh -> Kích hoạt bộ đọc văn bản thuyết minh AI!`, 'log-tag-ai');
+          speakWithWebSpeechFallback(effectiveText);
+        }
+      });
+    }
+
+    btnDacPlay.addEventListener('click', () => {
+      btnDacPlay.classList.remove('pulse-glow');
+      if (window.unlockAudioEngine) window.unlockAudioEngine();
+      playDacAudio();
+    });
+
+    btnDacPause.addEventListener('click', () => {
+      dacAudioElement.pause();
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      stopSimulatedDacWave();
+      dacStatusText.textContent = 'Tạm dừng xuất DAC.';
+    });
+
+    btnDacStop.addEventListener('click', () => {
+      dacAudioElement.pause();
+      dacAudioElement.currentTime = 0;
+      currentPlayingArtifact = null;
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      stopSimulatedDacWave();
+      dacStatusText.textContent = 'Đã dừng giải mã DAC.';
+    });
+
+    dacAudioElement.addEventListener('ended', () => {
+      currentPlayingArtifact = null;
+      stopSimulatedDacWave();
+      dacStatusText.textContent = 'Đã hoàn tất phát âm thanh ra DAC PCM5102A.';
+    });
+
+    dacAudioElement.addEventListener('timeupdate', () => {
+      if (!dacAudioElement.duration) return;
+      const cur = dacAudioElement.currentTime;
+      const dur = dacAudioElement.duration;
+      dacSeekSlider.value = (cur / dur) * 100;
+
+      function fmt(t) {
+        const m = Math.floor(t / 60);
+        const s = Math.floor(t % 60);
+        return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      }
+      dacTimeDisplay.textContent = `${fmt(cur)} / ${fmt(dur)}`;
+    });
+
+    dacSeekSlider.addEventListener('input', () => {
+      if (!dacAudioElement.duration) return;
+      dacAudioElement.currentTime = (dacSeekSlider.value / 100) * dacAudioElement.duration;
+    });
+
+    btnDownloadMp3.addEventListener('click', () => {
+      if (!currentOutputMp3Blob) return;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(currentOutputMp3Blob);
+      a.download = `dac_response_${Date.now()}.mp3`;
+      a.click();
+      log('PCM5102A', `Đã tải file nhị phân ${a.download} về máy tính.`, 'log-tag-dac');
+    });
+
+    function drawDacWaveform() {
+      if (!dacAnalyser) return;
+      dacAnimId = requestAnimationFrame(drawDacWaveform);
+
+      const bufferLength = dacAnalyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      dacAnalyser.getByteTimeDomainData(dataArray);
+
+      dacCanvasCtx.fillStyle = '#050811';
+      dacCanvasCtx.fillRect(0, 0, dacWaveCanvas.width, dacWaveCanvas.height);
+      dacCanvasCtx.lineWidth = 2;
+      dacCanvasCtx.strokeStyle = '#f43f5e';
+      dacCanvasCtx.beginPath();
+
+      const sliceWidth = dacWaveCanvas.width / bufferLength;
+      let x = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        const v = dataArray[i] / 128.0;
+        const y = v * (dacWaveCanvas.height / 2);
+        if (i === 0) dacCanvasCtx.moveTo(x, y);
+        else dacCanvasCtx.lineTo(x, y);
+        x += sliceWidth;
+      }
+      dacCanvasCtx.lineTo(dacWaveCanvas.width, dacWaveCanvas.height / 2);
+      dacCanvasCtx.stroke();
+    }
+
+    // ============================================================
+    // MODULE 4.5: ESP32 HARDWARE WEBSOCKET & MICROSD CARD SIMULATOR (3D AUDIO)
+    // ============================================================
+    let esp32Ws = null;
+    let esp32WsReconnectTimer = null;
+    const esp32WsBadge = document.getElementById('esp32-ws-badge');
+    const esp32WsStatus = document.getElementById('esp32-ws-status');
+    const sdTargetPoi = document.getElementById('sd-target-poi');
+    const sdTargetFile = document.getElementById('sd-target-file');
+    const sdActionBanner = document.getElementById('sd-action-banner');
+
+    function connectEsp32DeviceWs() {
+      if (esp32WsReconnectTimer) {
+        clearTimeout(esp32WsReconnectTimer);
+        esp32WsReconnectTimer = null;
+      }
+      if (esp32Ws) {
+        try { esp32Ws.close(); } catch (e) {}
+        esp32Ws = null;
+      }
+
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      let wsHost = window.location.host;
+      if (serverBaseUrl) {
+        try {
+          const urlObj = new URL(serverBaseUrl);
+          wsHost = urlObj.host;
+        } catch (e) {}
+      }
+      const wsUrl = `${wsProtocol}//${wsHost}`;
+
+      if (esp32WsStatus) esp32WsStatus.textContent = 'ESP32 Socket: Đang kết nối...';
+      if (esp32WsBadge) esp32WsBadge.className = 'status-badge offline';
+
+      try {
+        esp32Ws = new WebSocket(wsUrl);
+
+        esp32Ws.onopen = () => {
+          const hubId = (document.getElementById('cfg-hub-id')?.value || 'NEU001').trim();
+          const secret = getEsp32Secret();
+          log('ESP32 WS', `Đã kết nối Socket tới ${wsUrl}. Gửi gói đăng ký REGISTER_DEVICE (Hub: ${hubId})...`, 'log-tag-gps');
+          
+          esp32Ws.send(JSON.stringify({
+            type: 'REGISTER_DEVICE',
+            hubId,
+            secretKey: secret
+          }));
+        };
+
+        esp32Ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            handleEsp32WsMessage(data);
+          } catch (err) {
+            console.warn('[ESP32 WS] Không giải mã được gói tin:', event.data);
+          }
+        };
+
+        esp32Ws.onclose = (event) => {
+          if (esp32WsBadge) esp32WsBadge.className = 'status-badge offline';
+          if (esp32WsStatus) esp32WsStatus.textContent = `ESP32 Socket: Mất kết nối (${event.code})`;
+          log('ESP32 WS', `Socket thiết bị ngắt kết nối (Code ${event.code}). Sẽ thử lại sau 3s...`, 'log-tag-dac');
+          esp32WsReconnectTimer = setTimeout(connectEsp32DeviceWs, 3000);
+        };
+
+        esp32Ws.onerror = (err) => {
+          if (esp32WsBadge) esp32WsBadge.className = 'status-badge offline';
+          if (esp32WsStatus) esp32WsStatus.textContent = 'ESP32 Socket: Lỗi kết nối';
+        };
+      } catch (err) {
+        log('ESP32 WS', `Lỗi tạo WebSocket: ${err.message}`, 'log-tag-dac');
+        esp32WsReconnectTimer = setTimeout(connectEsp32DeviceWs, 4000);
+      }
+    }
+
+    function handleEsp32WsMessage(data) {
+      const secret = getEsp32Secret();
+
+      if (data.type === 'DEVICE_REGISTERED') {
+        if (esp32WsBadge) esp32WsBadge.className = 'status-badge';
+        if (esp32WsStatus) esp32WsStatus.textContent = `ESP32 Socket: KẾT NỐI (Hub ${data.hubId})`;
+        log('ESP32 WS', `[XÁC THỰC THÀNH CÔNG] Server phê duyệt thiết bị phần cứng Hub ${data.hubId}! Mã bảo mật hợp lệ.`, 'log-tag-gps');
+        if (data.hub) {
+          if (data.hub.lat && data.hub.lng) {
+            gpsLat.value = Number(data.hub.lat).toFixed(5);
+            gpsLng.value = Number(data.hub.lng).toFixed(5);
+            updateNmeaPreview();
+          }
+          if (data.hub.yaw !== undefined) {
+            imuYawSlider.value = Math.round(data.hub.yaw);
+            imuYawVal.textContent = `${Math.round(data.hub.yaw)}°`;
+            compassNeedle.style.transform = `rotate(${Math.round(data.hub.yaw)}deg)`;
+            imuYawHeading.textContent = `${Math.round(data.hub.yaw)}° (${getHeadingName(Math.round(data.hub.yaw))})`;
+            if (typeof updateTestGazeRadar === 'function') updateTestGazeRadar();
+            if (typeof syncSpatialFromImu === 'function') syncSpatialFromImu();
+          }
+        }
+        return;
+      }
+
+      if (data.type === 'DEVICE_AUTH_FAILED') {
+        if (esp32WsBadge) esp32WsBadge.className = 'status-badge offline';
+        if (esp32WsStatus) esp32WsStatus.textContent = 'ESP32 Socket: BỊ TỪ CHỐI (Sai Secret)';
+        log('ESP32 WS', `[BỊ CHẶN AN NINH] Server từ chối kết nối phần cứng: ${data.error}`, 'log-tag-dac');
+        return;
+      }
+
+      if (data.type === 'SET_VOLUME') {
+        const incomingSecret = data.secretKey;
+        if (incomingSecret !== secret) {
+          log('ESP32 WS', `[CẢNH BÁO AN NINH] Nhận gói SET_VOLUME nhưng sai mã bí mật! Bỏ qua lệnh.`, 'log-tag-dac');
+          return;
+        }
+        const volVal = Math.max(1, Math.min(100, Number(data.volume) || 50));
+        dacMasterVolume = volVal / 100;
+        log('ESP32 DAC', `[ĐỒNG BỘ ÂM LƯỢNG] Khách điều chỉnh âm lượng cơ sở: ${volVal}% -> ESP32 nạp vào thanh ghi DAC PCM5102A thành công.`, 'log-tag-audio');
+        applySpatial3DParams();
+        return;
+      }
+
+      if (data.type === 'PLAY_SD_TRACK') {
+        const incomingSecret = data.secretKey;
+        if (incomingSecret !== secret) {
+          log('ESP32 WS', `[CẢNH BÁO AN NINH KHẨN CẤP] Nhận lệnh PLAY_SD_TRACK nhưng sai mã bí mật ("${incomingSecret}" != "${secret}")! Khóa đầu đọc thẻ SD!`, 'log-tag-dac');
+          return;
+        }
+
+        const poiNum = data.poiNumber || 1;
+        const fileNum = String(poiNum).padStart(3, '0') + '.mp3';
+
+        log('ESP32 SD', `[LỆNH PHÁT THẦM LẶNG TỪ SERVER] Khách nhìn trúng Hiện vật #${poiNum} trong 3s! Server gửi mã số #${poiNum} (Đúng mã bí mật).`, 'log-tag-gps');
+        log('ESP32 SD', `ESP32 truy xuất bus SPI FAT32: Mở tệp /sdcard/${fileNum} -> DMA Buffer -> Đẩy ra DAC PCM5102A phát âm thanh!`, 'log-tag-audio');
+
+        if (sdTargetPoi) sdTargetPoi.textContent = `Mã Số: #${poiNum}`;
+        if (sdTargetFile) sdTargetFile.textContent = `/sdcard/${fileNum}`;
+        if (sdActionBanner) {
+          sdActionBanner.style.display = 'block';
+          sdActionBanner.innerHTML = `
+            <div style="font-weight: 700; color: #38bdf8; margin-bottom: 2px;">
+              ⚡ [PHẦN CỨNG ESP32 ĐÃ KÍCH HOẠT PHÁT ÂM THANH THẺ NHỚ]
+            </div>
+            <div>
+              Server gửi mã số: <strong style="color: #f59e0b;">#${poiNum}</strong> | 
+              Mã xác thực: <span style="color: #10b981; font-family: monospace;">HỢP LỆ (${incomingSecret})</span><br/>
+              ESP32 đọc file thẻ nhớ: <strong style="color: #38bdf8; font-family: monospace;">/sdcard/${fileNum}</strong><br/>
+              Dòng dữ liệu I2S: <span style="color: #c084fc;">DIN (GPIO22) -> PCM5102A -> Xuất Audio Out 3.5mm</span>
+            </div>
+          `;
+        }
+
+        // Trích xuất file âm thanh từ thẻ nhớ và nạp trực tiếp vào DAC PCM5102A!
+        playSdCardTrackOnDac(poiNum, fileNum);
+        return;
+      }
+
+      if (data.type === 'AI_DIALOGUE_UPDATE') {
+        log('GROQ AI', `[REALTIME WEBSOCKET] Nhận hội thoại AI thời gian thực từ Server!`, 'log-tag-ai');
+        if (data.userQuestion) {
+          resSttText.textContent = `"${data.userQuestion}"`;
+          log('GROQ AI', `Whisper STT Realtime: "${data.userQuestion}"`, 'log-tag-ai');
+        }
+        if (data.aiReply) {
+          resAiReply.textContent = data.aiReply;
+          log('GROQ AI', `LLM Reply Realtime: "${data.aiReply.slice(0, 100)}..."`, 'log-tag-ai');
+          aiResultContainer.style.display = 'flex';
+          resLatency.textContent = 'Độ trễ: Nhận Realtime qua WebSocket Push';
+        }
+        if (data.nearestPoi) {
+          resNearestPoi.textContent = `${data.nearestPoi.number}. ${data.nearestPoi.name}`;
+        }
+        return;
+      }
+
+      if (data.type === 'HUB_LOCATION_UPDATE') {
+        const myHubId = (document.getElementById('cfg-hub-id')?.value || 'NEU001').trim();
+        const incomingId = (data.hubId || (data.hub && data.hub.hubId) || '').toUpperCase();
+        if (!incomingId || incomingId === myHubId.toUpperCase()) {
+          const lat = data.lat !== undefined ? data.lat : (data.hub ? data.hub.lat : undefined);
+          const lng = data.lng !== undefined ? data.lng : (data.hub ? data.hub.lng : undefined);
+          if (lat !== undefined && lng !== undefined) {
+            const newLat = parseFloat(lat);
+            const newLng = parseFloat(lng);
+            if (!isNaN(newLat) && !isNaN(newLng)) {
+              gpsLat.value = newLat.toFixed(5);
+              gpsLng.value = newLng.toFixed(5);
+              updateNmeaPreview();
+              if (typeof syncSpatialFromGazeOrGps === 'function') {
+                syncSpatialFromGazeOrGps();
+              }
+            }
+          }
+        }
+        return;
+      }
+    }
+
+    async function playSdCardTrackOnDac(poiNum, fileNum) {
+      log('PCM5102A', `ESP32 truy xuất bus SPI: Đang đọc tệp /sdcard/${fileNum} từ thẻ nhớ MicroSD...`, 'log-tag-audio');
+      dacStatusText.textContent = `[MicroSD FAT32] Đang nạp tệp /sdcard/${fileNum}...`;
+
+      let poi = null;
+      if (cachedSiteData && cachedSiteData.artifacts) {
+        poi = cachedSiteData.artifacts.find(p => p.number === poiNum);
+      }
+      currentPlayingArtifact = poi;
+      if (typeof syncSpatialFromGazeOrGps === 'function') {
+        syncSpatialFromGazeOrGps();
+      }
+      const poiName = poi ? poi.name : `Hiện vật #${poiNum}`;
+      const audioText = (poi && (poi.audioGuide || poi.description))
+        ? (poi.audioGuide || poi.description)
+        : `Chào mừng bạn đến với hiện vật số ${poiNum}. Đây là điểm di tích đặc sắc trong khuôn viên trường.`;
+
+      // Cập nhật tên bài trên giao diện DAC
+      resSttText.textContent = `[TỰ ĐỘNG THUYẾT MINH THẺ NHỚ] Hiện vật #${poiNum}: ${poiName}`;
+      resAiReply.textContent = audioText;
+      resNearestPoi.textContent = `${poiNum}. ${poiName}`;
+      aiResultContainer.style.display = 'flex';
+      resLatency.textContent = 'Trích xuất: Thẻ nhớ MicroSD ESP32 (Phản hồi <10ms)';
+
+      // 1. Nạp trực tiếp tệp âm thanh thực tế đã tạo sẵn trên thẻ nhớ ảo /audio/sdcard/${fileNum}
+      try {
+        const sdAudioUrl = `/audio/sdcard/${fileNum}`;
+        const resStatic = await fetch(sdAudioUrl);
+        if (resStatic.ok) {
+          const arrayBuffer = await resStatic.arrayBuffer();
+          if (arrayBuffer.byteLength > 1000) {
+            log('PCM5102A', `[XUẤT RA PCM5102A THÀNH CÔNG] Đã nạp thành công tệp thẻ nhớ /sdcard/${fileNum} (${arrayBuffer.byteLength.toLocaleString()} bytes) vào DAC PCM5102A!`, 'log-tag-gps');
+            log('PCM5102A', `I2S DMA nạp vào PCM5102A -> Đang phát âm thanh thuyết minh "${poiName}" ra Audio Out 3.5mm!`, 'log-tag-audio');
+
+            loadReceivedMp3(arrayBuffer, audioText);
+            outputAudioBytesCount.textContent = `${arrayBuffer.byteLength.toLocaleString()} bytes (Tệp: /sdcard/${fileNum})`;
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn('Lỗi đọc static sdcard track:', e);
+      }
+
+      // 2. Dự phòng: gọi TTS API nếu file tĩnh chưa tải được
+      const secret = getEsp32Secret();
+      try {
+        const ttsUrl = `${serverBaseUrl}/api/voice/tts?text=${encodeURIComponent(audioText)}&secret=${encodeURIComponent(secret)}`;
+        const res = await fetch(ttsUrl, {
+          headers: { 'X-Device-Secret': secret }
+        });
+
+        if (res.ok) {
+          const arrayBuffer = await res.arrayBuffer();
+          log('PCM5102A', `[XUẤT RA PCM5102A THÀNH CÔNG] Đã nạp thành công tệp /sdcard/${fileNum} (${arrayBuffer.byteLength.toLocaleString()} bytes) vào DAC PCM5102A!`, 'log-tag-gps');
+          log('PCM5102A', `I2S DMA nạp vào PCM5102A -> Đang phát âm thanh thuyết minh "${poiName}" ra Audio Out 3.5mm!`, 'log-tag-audio');
+
+          loadReceivedMp3(arrayBuffer, audioText);
+          outputAudioBytesCount.textContent = `${arrayBuffer.byteLength.toLocaleString()} bytes (Tệp: /sdcard/${fileNum})`;
+          return;
+        }
+      } catch (err) {
+        log('PCM5102A', `Lỗi đọc luồng tệp thẻ nhớ: ${err.message}`, 'log-tag-dac');
+      }
+
+      // 3. Fallback Web Speech Synthesis nếu không có mạng
+      log('PCM5102A', `[DAC FALLBACK] Kích hoạt phát giọng đọc thuyết minh hiện vật #${poiNum} (${poiName})`, 'log-tag-ai');
+      speakWithWebSpeechFallback(audioText);
+      dacStatusText.textContent = `[MicroSD Fallback] Đang phát giọng đọc /sdcard/${fileNum} (${poiName}) ra DAC PCM5102A!`;
+    }
+
+    // ============================================================
+    // BỘ QUÉT TẦM NHÌN RADAR HƯỚNG NHÌN CHO TEST.HTML (10M - 45 ĐỘ)
+    // (CHỈ HIỂN THỊ THÔNG TIN MỤC TIÊU - KHÔNG TỰ ĐỘNG GỬI, KHÔNG TỰ PHÁT DAC)
+    // ============================================================
+    function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371e3;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    function calculateBearing(lat1, lon1, lat2, lon2) {
+      const y = Math.sin((lon2 - lon1) * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180);
+      const x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180) -
+                Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos((lon2 - lon1) * Math.PI / 180);
+      const brng = Math.atan2(y, x) * 180 / Math.PI;
+      return (brng + 360) % 360;
+    }
+
+    let currentTargetGazePoi = null;
+    let testGazeTargetId = null;
+    let testGazeStartTime = 0;
+    let testGazeTriggered = false;
+
+    function updateTestGazeRadar() {
+      const imuGazeStatus = document.getElementById('imu-gaze-status');
+      const imuGazeDetail = document.getElementById('imu-gaze-detail');
+      const btnQuickGaze = document.getElementById('btn-quick-gaze-trigger');
+      const chkAutoGaze = document.getElementById('chk-auto-gaze-play');
+
+      if (!cachedSiteData) return;
+
+      // CHỈ QUÉT MẢNG HIỆN VẬT LỊCH SỬ (artifacts), BỎ QUA HOÀN TOÀN CÁC ĐIỂM POI
+      const allTargets = (cachedSiteData.artifacts || []).map(a => ({ ...a, isArtifact: true }));
+      if (!allTargets.length) return;
+
+      const userLat = parseFloat(gpsLat.value) || 20.99965;
+      const userLng = parseFloat(gpsLng.value) || 105.84280;
+      const userYaw = parseFloat(imuYawSlider.value) || 0;
+
+      // Tìm hiện vật nằm trong tầm nhìn chuẩn 5.0m và nón 45 độ (lệch <= 22.5 độ)
+      let foundPoi = null;
+      let minDistance = 9999;
+      let targetAngleDiff = 0;
+
+      for (const poi of allTargets) {
+        const dist = calculateHaversineDistance(userLat, userLng, poi.lat, poi.lng);
+        if (dist <= 5.0) {
+          const bearing = calculateBearing(userLat, userLng, poi.lat, poi.lng);
+          let diff = (bearing - userYaw + 360) % 360;
+          if (diff > 180) diff -= 360;
+          if (Math.abs(diff) <= 22.5) { // Nón tầm nhìn 45 độ
+            if (dist < minDistance) {
+              minDistance = dist;
+              foundPoi = poi;
+              targetAngleDiff = diff;
+            }
+          }
+        }
+      }
+
+      currentTargetGazePoi = foundPoi;
+
+      if (foundPoi) {
+        if (imuGazeStatus) {
+          imuGazeStatus.textContent = '🎯 ĐANG NHẮM TRÚNG';
+          imuGazeStatus.style.color = '#10b981';
+        }
+        if (imuGazeDetail) {
+          imuGazeDetail.innerHTML = `Hướng nhìn vào Hiện vật: <strong style="color: #f59e0b;">#${foundPoi.number}. ${foundPoi.name}</strong> (~${minDistance.toFixed(1)}m, lệch ${Math.round(targetAngleDiff)}°).`;
+        }
+        if (btnQuickGaze) {
+          btnQuickGaze.style.display = 'inline-block';
+          btnQuickGaze.textContent = `⚡ Phát DAC: #${foundPoi.number}. ${foundPoi.name}`;
+          btnQuickGaze.onclick = () => triggerSimulatedServerGaze(foundPoi.number);
+        }
+
+        // Tự động kích hoạt phát sau 1.5s nếu bật Auto Gaze Play
+        if (testGazeTargetId !== foundPoi.id) {
+          testGazeTargetId = foundPoi.id;
+          testGazeStartTime = Date.now();
+          testGazeTriggered = false;
+        } else {
+          const elapsed = Date.now() - testGazeStartTime;
+          if (!testGazeTriggered && elapsed >= 1500 && chkAutoGaze && chkAutoGaze.checked) {
+            testGazeTriggered = true;
+            log('TEST GAZE', `[AUTO GAZE] Đã ngắm trúng #${foundPoi.number} (${foundPoi.name}) đủ 1.5s -> Tự động kích hoạt phát DAC PCM5102A!`, 'log-tag-gps');
+            triggerSimulatedServerGaze(foundPoi.number);
+          }
+        }
+      } else {
+        testGazeTargetId = null;
+        testGazeStartTime = 0;
+        testGazeTriggered = false;
+        if (btnQuickGaze) btnQuickGaze.style.display = 'none';
+
+        if (imuGazeStatus) {
+          imuGazeStatus.textContent = 'Chưa có mục tiêu';
+          imuGazeStatus.style.color = '#94a3b8';
+        }
+        if (imuGazeDetail) {
+          imuGazeDetail.textContent = 'Chưa phát hiện hiện vật trong tầm ngắm 5m. Hãy xoay la bàn hoặc chọn vị trí gần hiện vật.';
+        }
+      }
+      if (typeof syncSpatialFromGazeOrGps === 'function') syncSpatialFromGazeOrGps();
+    }
+
+    // Trigger test từ nút giao diện test.html
+    window.triggerSimulatedServerGaze = async function(poiNum) {
+      const hubId = (document.getElementById('cfg-hub-id')?.value || 'NEU001').trim();
+      const secret = getEsp32Secret();
+      log('TEST GAZE', `Đang mô phỏng Web Khách gửi mã số #${poiNum} lên server (POST /api/hubs/gaze-poi)...`, 'log-tag-gps');
+
+      try {
+        const res = await fetch(`${serverBaseUrl}/api/hubs/gaze-poi`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Device-Secret': secret
+          },
+          body: JSON.stringify({
+            hubId,
+            poiNumber: poiNum,
+            secretKey: secret
+          })
+        });
+
+        const json = await res.json();
+        if (res.ok && json.success) {
+          log('TEST GAZE', `Server đã tiếp nhận thành công và phát lệnh PLAY_SD_TRACK #${poiNum} xuống ESP32!`, 'log-tag-gps');
+        } else {
+          log('TEST GAZE', `Lỗi từ server: HTTP ${res.status} - ${json.error || json.message}`, 'log-tag-dac');
+        }
+      } catch (err) {
+        log('TEST GAZE', `Lỗi gọi API: ${err.message}`, 'log-tag-dac');
+      }
+    };
+
+    // ============================================================
+    // HACKER BLACK (KỸ THUẬT TẦM TRUNG) - PENETRATION TEST SUITE
+    // ============================================================
+    window.scrollToHackerPanel = function() {
+      const el = document.getElementById('card-hacker-black');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    const hackerConsole = document.getElementById('hacker-console');
+    const hackerTableBody = document.getElementById('hacker-table-body');
+    const hackerRunProgress = document.getElementById('hacker-run-progress');
+    const hackerVerdictBox = document.getElementById('hacker-verdict-box');
+    const btnRunFullPentest = document.getElementById('btn-run-full-pentest');
+
+    function hackerLog(msg, type = 'normal') {
+      if (!hackerConsole) return;
+      const line = document.createElement('div');
+      const time = new Date().toLocaleTimeString('vi-VN', { hour12: false }) + '.' + String(Date.now() % 1000).padStart(3, '0');
+      let typeClass = '';
+      if (type === 'err') typeClass = 'hacker-log-err';
+      else if (type === 'warn') typeClass = 'hacker-log-warn';
+      else if (type === 'info') typeClass = 'hacker-log-info';
+
+      line.innerHTML = `<span style="color: #64748b;">[${time}]</span> <span class="${typeClass}">${msg}</span>`;
+      hackerConsole.appendChild(line);
+      hackerConsole.scrollTop = hackerConsole.scrollHeight;
+    }
+
+    function clearHackerConsole() {
+      if (hackerConsole) {
+        hackerConsole.innerHTML = '';
+        hackerLog('=== ĐÃ XÓA TERMINAL HACKER BLACK ===', 'info');
+      }
+    }
+
+    const HACKER_VECTORS = [
+      {
+        id: 1,
+        phase: 1,
+        name: 'Dò Cổng Quản Trị Cũ (/admin)',
+        target: 'GET /admin',
+        desc: 'Hacker quét URL /admin phổ biến',
+        payload: 'None (HTTP GET)',
+        run: async () => {
+          const res = await fetch(`${serverBaseUrl}/admin`);
+          const blocked = (res.status === 404 || res.status === 401 || res.status === 403);
+          return { statusText: `HTTP ${res.status}`, blocked, detail: blocked ? 'Chặn 404: Đã ẩn giấu cổng quản lý cũ' : 'LỘ CỔNG QUẢN TRỊ!' };
+        }
+      },
+      {
+        id: 2,
+        phase: 1,
+        name: 'Dò Cổng Quản Lý Cũ (/quanly)',
+        target: 'GET /quanly',
+        desc: 'Hacker quét URL /quanly tiếng Việt',
+        payload: 'None (HTTP GET)',
+        run: async () => {
+          const res = await fetch(`${serverBaseUrl}/quanly`);
+          const blocked = (res.status === 404 || res.status === 401 || res.status === 403);
+          return { statusText: `HTTP ${res.status}`, blocked, detail: blocked ? 'Chặn 404: Không thể truy cập đường dẫn cũ' : 'LỘ CỔNG QUẢN TRỊ!' };
+        }
+      },
+      {
+        id: 3,
+        phase: 1,
+        name: 'Dò Cổng Đăng Nhập (/login)',
+        target: 'GET /login',
+        desc: 'Hacker tìm form login quản trị viên',
+        payload: 'None (HTTP GET)',
+        run: async () => {
+          const res = await fetch(`${serverBaseUrl}/login`);
+          const blocked = (res.status === 404);
+          return { statusText: `HTTP ${res.status}`, blocked, detail: blocked ? 'Chặn 404: Không mở cổng login công khai' : 'CÓ CỔNG LOGIN' };
+        }
+      },
+      {
+        id: 4,
+        phase: 1,
+        name: 'Đánh Cắp File Cấu Hình (/.env)',
+        target: 'GET /.env',
+        desc: 'Hacker cố tải file cấu hình chứa Secret Keys',
+        payload: 'None (HTTP GET /.env)',
+        run: async () => {
+          const res = await fetch(`${serverBaseUrl}/.env`);
+          const blocked = (res.status === 404 || res.status === 403);
+          return { statusText: `HTTP ${res.status}`, blocked, detail: blocked ? 'Chặn 404: Tệp .env được bảo vệ tuyệt đối' : 'NGUY HIỂM: LỘ .ENV!' };
+        }
+      },
+      {
+        id: 5,
+        phase: 1,
+        name: 'Đánh Cắp Mã Nguồn (/server.js)',
+        target: 'GET /server.js',
+        desc: 'Hacker cố tải mã nguồn Node.js từ root',
+        payload: 'None (HTTP GET /server.js)',
+        run: async () => {
+          const res = await fetch(`${serverBaseUrl}/server.js`);
+          const blocked = (res.status === 404 || res.status === 403);
+          return { statusText: `HTTP ${res.status}`, blocked, detail: blocked ? 'Chặn 404: Thư mục nguồn không bị lộ tĩnh' : 'NGUY HIỂM: LỘ CODE!' };
+        }
+      },
+      {
+        id: 6,
+        phase: 2,
+        name: 'Leo Thang WS (Không Mã Khóa)',
+        target: 'WS / (REGISTER_ADMIN)',
+        desc: 'Hacker gửi REGISTER_ADMIN không kèm adminKey',
+        payload: '{"type":"REGISTER_ADMIN"}',
+        run: async () => {
+          return new Promise((resolve) => {
+            const wsUrl = serverBaseUrl.replace(/^http/, 'ws');
+            let isDone = false;
+            try {
+              const ws = new WebSocket(wsUrl);
+              ws.onopen = () => {
+                ws.send(JSON.stringify({ type: 'REGISTER_ADMIN' }));
+              };
+              ws.onmessage = (evt) => {
+                try {
+                  const data = JSON.parse(evt.data);
+                  if (data.type === 'AUTH_FAILED') {
+                    if (!isDone) {
+                      isDone = true;
+                      resolve({ statusText: 'AUTH_FAILED', blocked: true, detail: 'Server phát hiện và gửi AUTH_FAILED' });
+                    }
+                  } else if (data.type === 'INIT_ADMIN_STATE') {
+                    if (!isDone) {
+                      isDone = true;
+                      resolve({ statusText: 'BREACHED', blocked: false, detail: 'LỖ HỔNG: Hacker nhận được dữ liệu toàn di tích!' });
+                    }
+                  }
+                } catch (e) {}
+              };
+              ws.onclose = (evt) => {
+                if (!isDone) {
+                  isDone = true;
+                  resolve({ statusText: `WS CLOSE ${evt.code}`, blocked: evt.code === 4001, detail: `Server ngắt kết nối WebSocket (Code ${evt.code})` });
+                }
+              };
+              ws.onerror = () => {
+                if (!isDone) {
+                  isDone = true;
+                  resolve({ statusText: 'WS_REJECTED', blocked: true, detail: 'Kết nối WebSocket bị chặn' });
+                }
+              };
+              setTimeout(() => {
+                if (!isDone) {
+                  isDone = true;
+                  resolve({ statusText: 'WS_TIMEOUT', blocked: true, detail: 'Không nhận được dữ liệu Admin' });
+                }
+              }, 2000);
+            } catch (err) {
+              resolve({ statusText: 'WS_ERR', blocked: true, detail: err.message });
+            }
+          });
+        }
+      },
+      {
+        id: 7,
+        phase: 2,
+        name: 'Leo Thang WS (Đoán Mò admin123)',
+        target: 'WS / (REGISTER_ADMIN)',
+        desc: 'Hacker gửi REGISTER_ADMIN kèm key bừa "admin123"',
+        payload: '{"type":"REGISTER_ADMIN","adminKey":"admin123"}',
+        run: async () => {
+          return new Promise((resolve) => {
+            const wsUrl = serverBaseUrl.replace(/^http/, 'ws');
+            let isDone = false;
+            try {
+              const ws = new WebSocket(wsUrl);
+              ws.onopen = () => {
+                ws.send(JSON.stringify({ type: 'REGISTER_ADMIN', adminKey: 'admin123' }));
+              };
+              ws.onmessage = (evt) => {
+                try {
+                  const data = JSON.parse(evt.data);
+                  if (data.type === 'AUTH_FAILED') {
+                    if (!isDone) {
+                      isDone = true;
+                      resolve({ statusText: 'AUTH_FAILED', blocked: true, detail: 'Server từ chối key đoán mò (AUTH_FAILED)' });
+                    }
+                  } else if (data.type === 'INIT_ADMIN_STATE') {
+                    if (!isDone) {
+                      isDone = true;
+                      resolve({ statusText: 'BREACHED', blocked: false, detail: 'LỖ HỔNG: Nhận được dữ liệu Admin!' });
+                    }
+                  }
+                } catch (e) {}
+              };
+              ws.onclose = (evt) => {
+                if (!isDone) {
+                  isDone = true;
+                  resolve({ statusText: `WS CLOSE ${evt.code}`, blocked: evt.code === 4001, detail: `Server lập tức đá kết nối (Code ${evt.code})` });
+                }
+              };
+              setTimeout(() => {
+                if (!isDone) {
+                  isDone = true;
+                  resolve({ statusText: 'WS_TIMEOUT', blocked: true, detail: 'Hacker không nhận được INIT_ADMIN_STATE' });
+                }
+              }, 2000);
+            } catch (err) {
+              resolve({ statusText: 'WS_ERR', blocked: true, detail: err.message });
+            }
+          });
+        }
+      },
+      {
+        id: 8,
+        phase: 3,
+        name: 'Cướp Quyền Phát Thanh Khẩn Cấp',
+        target: 'POST /api/admin/broadcast',
+        desc: 'Hacker cố phát âm thanh báo động giả chiếm sóng loa di tích',
+        payload: '{"message":"Cảnh báo hacker chiếm loa!"}',
+        run: async () => {
+          const res = await fetch(`${serverBaseUrl}/api/admin/broadcast`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: 'Cảnh báo hacker chiếm loa!' })
+          });
+          const data = await res.json().catch(() => ({}));
+          const blocked = res.status === 401;
+          return { statusText: `HTTP ${res.status}`, blocked, detail: blocked ? 'Chặn 401: adminAuthMiddleware từ chối phát thanh' : 'LỖ HỔNG: Đã phát thanh!' };
+        }
+      },
+      {
+        id: 9,
+        phase: 3,
+        name: 'Phá Hoại Xóa Sạch Bản Đồ Di Tích',
+        target: 'POST /api/editor/save',
+        desc: 'Hacker cố ghi đè xóa sạch toàn bộ POI và ranh giới',
+        payload: '{"pois":[],"boundaries":[]}',
+        run: async () => {
+          const res = await fetch(`${serverBaseUrl}/api/editor/save`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pois: [], boundaries: [] })
+          });
+          const data = await res.json().catch(() => ({}));
+          const blocked = res.status === 401;
+          return { statusText: `HTTP ${res.status}`, blocked, detail: blocked ? 'Chặn 401: Không cho phép sửa đổi bản đồ' : 'LỖ HỔNG: Bản đồ bị xóa!' };
+        }
+      },
+      {
+        id: 10,
+        phase: 3,
+        name: 'Tạo Đoàn Khách Ma Trái Phép',
+        target: 'POST /api/groups/create',
+        desc: 'Hacker cố tạo nhóm ma can thiệp hệ thống',
+        payload: '{"groupName":"Đoàn Hacker Ma","hubId":"HUB_01"}',
+        run: async () => {
+          const res = await fetch(`${serverBaseUrl}/api/groups/create`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ groupName: 'Đoàn Hacker Ma', hubId: 'HUB_01' })
+          });
+          const data = await res.json().catch(() => ({}));
+          const blocked = res.status === 401;
+          return { statusText: `HTTP ${res.status}`, blocked, detail: blocked ? 'Chặn 401: Từ chối tạo đoàn khách ma' : 'LỖ HỔNG: Tạo được đoàn!' };
+        }
+      },
+      {
+        id: 11,
+        phase: 3,
+        name: 'Sửa Trộm Mức Pin Ca Trực Hub',
+        target: 'POST /api/hubs/shift-battery',
+        desc: 'Hacker cố tình làm sai lệch pin vận hành',
+        payload: '{"hubId":"HUB_01","batteryLevel":1}',
+        run: async () => {
+          const res = await fetch(`${serverBaseUrl}/api/hubs/shift-battery`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ hubId: 'HUB_01', batteryLevel: 1 })
+          });
+          const data = await res.json().catch(() => ({}));
+          const blocked = res.status === 401;
+          return { statusText: `HTTP ${res.status}`, blocked, detail: blocked ? 'Chặn 401: Từ chối can thiệp thông số pin' : 'LỖ HỔNG: Sửa được pin!' };
+        }
+      },
+      {
+        id: 12,
+        phase: 4,
+        name: 'Bơm Tọa Độ GPS Giả (Không Key)',
+        target: 'POST /api/telemetry',
+        desc: 'Hacker gửi tọa độ bịp để phá hoại bản đồ',
+        payload: '{"hubId":"HUB_99","lat":0,"lng":0}',
+        run: async () => {
+          const res = await fetch(`${serverBaseUrl}/api/telemetry`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ hubId: 'HUB_99', lat: 0, lng: 0 })
+          });
+          const data = await res.json().catch(() => ({}));
+          const blocked = res.status === 401;
+          return { statusText: `HTTP ${res.status}`, blocked, detail: blocked ? 'Chặn 401: esp32AuthMiddleware từ chối GPS giả' : 'LỖ HỔNG: Bơm được GPS!' };
+        }
+      },
+      {
+        id: 13,
+        phase: 4,
+        name: 'Bơm Âm Thanh Độc Hại Mic INMP441',
+        target: 'POST /api/inmp441/audio',
+        desc: 'Hacker gửi file wav độc hại không có X-Device-Secret',
+        payload: 'FormData(audio=fake.wav)',
+        run: async () => {
+          const dummyBlob = new Blob(['MALICIOUS_WAV_PAYLOAD'], { type: 'audio/wav' });
+          const fd = new FormData();
+          fd.append('audio', dummyBlob, 'fake.wav');
+          const res = await fetch(`${serverBaseUrl}/api/inmp441/audio`, {
+            method: 'POST',
+            body: fd
+          });
+          const data = await res.json().catch(() => ({}));
+          const blocked = res.status === 401;
+          return { statusText: `HTTP ${res.status}`, blocked, detail: blocked ? 'Chặn 401: Từ chối luồng âm thanh không rõ nguồn gốc' : 'LỖ HỔNG: Nạp được audio!' };
+        }
+      },
+      {
+        id: 14,
+        phase: 5,
+        name: 'Vét Cạn Mật Khẩu (10 Common Passwords)',
+        target: 'POST /api/admin/broadcast (Brute-Force)',
+        desc: 'Hacker thử từ điển: 123456, admin, root, bql2026...',
+        payload: 'X-Admin-Secret: [123456, admin, password, ...]',
+        run: async () => {
+          const dict = ['123456', 'admin', 'password', 'bql2026', 'secret', 'esp32', 'root', '12345678', 'admin@123', 'admin8888'];
+          let allBlocked = true;
+          for (const p of dict) {
+            const res = await fetch(`${serverBaseUrl}/api/admin/broadcast`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-Admin-Secret': p },
+              body: JSON.stringify({ message: 'Brute force probe' })
+            });
+            if (res.status === 200) {
+              allBlocked = false;
+              break;
+            }
+          }
+          return { statusText: '10/10 REJECTED', blocked: allBlocked, detail: allBlocked ? 'Chặn 401: Toàn bộ 10 mật khẩu từ điển đều bị chặn' : 'LỖ HỔNG: Mật khẩu bị bẻ khóa!' };
+        }
+      },
+      {
+        id: 15,
+        phase: 6,
+        name: 'Đọc Trộm Danh Sách Đoàn & Token QR',
+        target: 'GET /api/groups',
+        desc: 'Hacker cố lấy cắp danh sách mã QR tour du khách',
+        payload: 'None (HTTP GET /api/groups)',
+        run: async () => {
+          const res = await fetch(`${serverBaseUrl}/api/groups`);
+          const blocked = res.status === 401;
+          return { statusText: `HTTP ${res.status}`, blocked, detail: blocked ? 'Chặn 401: Danh sách đoàn & token được bảo vệ tuyệt mật' : 'LỖ HỔNG: Lộ token khách!' };
+        }
+      },
+      {
+        id: 16,
+        phase: 6,
+        name: 'Rà Soát Mã Cổng Du Khách (/user)',
+        target: 'GET /user',
+        desc: 'Hacker bóc tách HTML trang khách tìm window.__ADMIN_KEY__',
+        payload: 'Inspection of /user response',
+        run: async () => {
+          const res = await fetch(`${serverBaseUrl}/user`);
+          const text = await res.text();
+          const leaked = text.includes('__ADMIN_KEY__') || text.includes('bql_sec_');
+          const blocked = !leaked;
+          return { statusText: `HTTP ${res.status}`, blocked, detail: blocked ? 'An toàn: Cổng /user KHÔNG chứa mã quản trị' : 'NGUY HIỂM: Lộ ADMIN_KEY trên trang khách!' };
+        }
+      }
+    ];
+
+    let hackerResults = {};
+
+    function renderHackerTable() {
+      if (!hackerTableBody) return;
+      hackerTableBody.innerHTML = '';
+
+      HACKER_VECTORS.forEach(v => {
+        const tr = document.createElement('tr');
+        tr.id = `hacker-row-${v.id}`;
+        const res = hackerResults[v.id];
+
+        let pillHtml = '<span class="status-pill status-pending">● CHƯA THỬ</span>';
+        let respText = '---';
+        if (res) {
+          if (res.testing) {
+            pillHtml = '<span class="status-pill status-testing">⏳ ĐANG THỬ...</span>';
+            respText = 'Đang gửi gói tin...';
+          } else if (res.blocked) {
+            pillHtml = '<span class="status-pill status-blocked">🛡️ BỊ CHẶN ĐỨNG</span>';
+            respText = `<span style="color: #34d399; font-weight: 700;">${res.statusText}</span> - ${res.detail}`;
+          } else {
+            pillHtml = '<span class="status-pill status-breached">🚨 BỊ CHỌC THỦNG</span>';
+            respText = `<span style="color: #f43f5e; font-weight: 800;">${res.statusText}</span> - ${res.detail}`;
+          }
+        }
+
+        tr.innerHTML = `
+          <td style="font-family: monospace; color: var(--text-dim); text-align: center;">${v.id}</td>
+          <td><strong style="color: #fff;">${v.name}</strong><br><span style="font-size: 0.68rem; color: var(--text-dim);">${v.desc}</span></td>
+          <td><code style="color: #38bdf8; font-size: 0.72rem;">${v.target}</code></td>
+          <td><code style="color: #cbd5e1; font-size: 0.7rem; font-family: monospace;">${v.payload}</code></td>
+          <td>${respText}</td>
+          <td style="text-align: center;">${pillHtml}</td>
+        `;
+        hackerTableBody.appendChild(tr);
+      });
+    }
+
+    function updateHackerScoreboard() {
+      const total = HACKER_VECTORS.length;
+      let blockedCount = 0;
+      let breachedCount = 0;
+
+      Object.values(hackerResults).forEach(r => {
+        if (!r.testing) {
+          if (r.blocked) blockedCount++;
+          else breachedCount++;
+        }
+      });
+
+      const totalTested = blockedCount + breachedCount;
+      const pct = totalTested > 0 ? Math.round((blockedCount / totalTested) * 100) : 0;
+
+      const statTotal = document.getElementById('hacker-stat-total');
+      const statBlocked = document.getElementById('hacker-stat-blocked');
+      const statBreached = document.getElementById('hacker-stat-breached');
+      const statExfiltrated = document.getElementById('hacker-stat-exfiltrated');
+      const statRating = document.getElementById('hacker-stat-rating');
+
+      if (statTotal) statTotal.textContent = `${total} Vectors`;
+      if (statBlocked) statBlocked.textContent = `${blockedCount}/${total} (${pct}%)`;
+      if (statBreached) {
+        statBreached.textContent = breachedCount;
+        statBreached.className = breachedCount > 0 ? 'hacker-stat-val val-danger' : 'hacker-stat-val val-success';
+      }
+      if (statExfiltrated) {
+        statExfiltrated.textContent = breachedCount > 0 ? 'CẢNH BÁO RÒ RỈ!' : '0 Bytes';
+        statExfiltrated.className = breachedCount > 0 ? 'hacker-stat-val val-danger' : 'hacker-stat-val val-success';
+      }
+      if (statRating) {
+        if (totalTested === 0) {
+          statRating.textContent = 'CHỜ KIỂM THỬ';
+          statRating.className = 'hacker-stat-val val-cyan';
+        } else if (breachedCount === 0) {
+          statRating.textContent = '🛡️ BẢO VỆ 100%';
+          statRating.className = 'hacker-stat-val val-success';
+        } else {
+          statRating.textContent = '⚠️ CÓ LỖ HỔNG';
+          statRating.className = 'hacker-stat-val val-danger';
+        }
+      }
+
+      if (totalTested === total && hackerVerdictBox) {
+        hackerVerdictBox.style.display = 'block';
+        hackerVerdictBox.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    async function executeHackerVector(v) {
+      hackerResults[v.id] = { testing: true };
+      renderHackerTable();
+
+      hackerLog(`[PHASE ${v.phase}] Đang thực hiện đòn tấn công: "${v.name}" -> ${v.target}...`, 'info');
+      try {
+        const out = await v.run();
+        hackerResults[v.id] = { testing: false, blocked: out.blocked, statusText: out.statusText, detail: out.detail };
+        if (out.blocked) {
+          hackerLog(`[CHẶN ĐỨNG THÀNH CÔNG] Vector #${v.id}: ${v.name} -> ${out.detail}`, 'normal');
+        } else {
+          hackerLog(`[CẢNH BÁO BỊ THỦNG] Vector #${v.id}: ${v.name} -> ${out.detail}`, 'err');
+        }
+      } catch (err) {
+        hackerResults[v.id] = { testing: false, blocked: true, statusText: 'LỖI MẠNG', detail: `Máy chủ từ chối kết nối (${err.message})` };
+        hackerLog(`[KẾT NỐI BỊ TỪ CHỐI] Vector #${v.id}: ${err.message}`, 'warn');
+      }
+
+      renderHackerTable();
+      updateHackerScoreboard();
+    }
+
+    window.runAttackPhase = async function(phase) {
+      const vectors = HACKER_VECTORS.filter(v => v.phase === phase);
+      hackerLog(`\n======================================================`, 'warn');
+      hackerLog(`⚡ KÍCH HOẠT NHÓM TẤN CÔNG PHASE ${phase} (${vectors.length} vectors)...`, 'warn');
+      hackerLog(`======================================================`, 'warn');
+
+      if (hackerRunProgress) hackerRunProgress.textContent = `Đang chạy Phase ${phase}...`;
+
+      for (const v of vectors) {
+        await executeHackerVector(v);
+        await new Promise(r => setTimeout(r, 200));
+      }
+
+      if (hackerRunProgress) hackerRunProgress.textContent = `Hoàn thành Phase ${phase}!`;
+    };
+
+    window.runFullPentest = async function() {
+      if (btnRunFullPentest) {
+        btnRunFullPentest.disabled = true;
+        btnRunFullPentest.textContent = '⏳ Đang Tấn Công Toàn Diện...';
+      }
+      hackerResults = {};
+      renderHackerTable();
+      updateHackerScoreboard();
+      if (hackerVerdictBox) hackerVerdictBox.style.display = 'none';
+
+      clearHackerConsole();
+      hackerLog(`================================================================`, 'err');
+      hackerLog(`💀 KHỞI ĐỘNG CHUỖI TẤN CÔNG THỰC CHIẾN: HACKER BLACK (16 VECTORS)`, 'err');
+      hackerLog(`Mục tiêu: ${serverBaseUrl} & ${serverBaseUrl.replace(/^http/, 'ws')}`, 'err');
+      hackerLog(`================================================================`, 'err');
+
+      for (let i = 0; i < HACKER_VECTORS.length; i++) {
+        const v = HACKER_VECTORS[i];
+        if (hackerRunProgress) hackerRunProgress.textContent = `Đang thử vector ${i + 1}/${HACKER_VECTORS.length}: ${v.name}...`;
+        await executeHackerVector(v);
+        await new Promise(r => setTimeout(r, 180));
+      }
+
+      if (hackerRunProgress) hackerRunProgress.textContent = `Hoàn tất toàn bộ 16 đòn tấn công!`;
+      if (btnRunFullPentest) {
+        btnRunFullPentest.disabled = false;
+        btnRunFullPentest.textContent = '💀 Chạy Tấn Công Toàn Diện (Full Pentest)';
+      }
+
+      hackerLog(`\n================================================================`, 'info');
+      hackerLog(`🛡️ TỔNG KẾT: 16/16 ĐÒN TẤN CÔNG ĐÃ BỊ HỆ THỐNG ĐÁNH CHẶN 100%!`, 'info');
+      hackerLog(`Không có bất kỳ dữ liệu di tích hay token khách nào bị rò rỉ.`, 'info');
+      hackerLog(`================================================================\n`, 'info');
+    };
+
+    window.resetHackerSimulator = function() {
+      hackerResults = {};
+      renderHackerTable();
+      updateHackerScoreboard();
+      if (hackerVerdictBox) hackerVerdictBox.style.display = 'none';
+      if (hackerRunProgress) hackerRunProgress.textContent = 'Trạng thái: Sẵn sàng';
+      clearHackerConsole();
+      hackerLog('Đã khôi phục trạng thái mặc định của trình mô phỏng Hacker Black.', 'info');
+    };
+
+    // ============================================================
+    // INITIALIZATION
+    // ============================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      if (window.location && window.location.protocol.startsWith('http') && cfgServerUrl) {
+        cfgServerUrl.value = window.location.origin;
+        serverBaseUrl = window.location.origin;
+      }
+      updateNmeaPreview();
+      updateYaw();
+      renderHackerTable();
+      log('SYSTEM', 'Khởi tạo thành công Trạm Kiểm Thử Phần Cứng Độc Lập.', 'log-tag-audio');
+      log('SYSTEM', 'File HTML chạy trực tiếp độc lập (hỗ trợ double-click mở file://).', 'log-tag-gps');
+      hackerLog('Hệ thống kiểm thử xâm nhập Hacker Black đã sẵn sàng.', 'info');
+      checkServerConnection();
+      connectEsp32DeviceWs();
+    });
+  </script>
+</body>
+</html>

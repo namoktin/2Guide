@@ -572,6 +572,47 @@ body {
   display: block;
 }
 
+/* 4. Pin Hiện Vật Lịch Sử & Văn Hóa (Artifacts) */
+.artifact-pin-wrapper {
+  position: relative;
+  width: 28px;
+  height: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.artifact-pin-svg {
+  filter: drop-shadow(0 3px 8px rgba(217, 119, 6, 0.65));
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+.artifact-pin-svg:hover {
+  transform: scale(1.22) translateY(-4px);
+}
+
+.artifact-pin-badge {
+  position: absolute;
+  top: -18px;
+  white-space: nowrap;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid #d97706;
+  color: #fbbf24;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+  pointer-events: none;
+  display: none;
+  z-index: 500;
+}
+.artifact-pin-wrapper:hover .artifact-pin-badge {
+  display: block;
+}
+
+
+
 /* Zone Polygon Label */
 .zone-label-tooltip {
   background: rgba(15, 23, 42, 0.85);
@@ -621,5 +662,55 @@ body {
   .map-wrapper {
     height: 52vh;
   }
+}
+
+/* Hub Tag Chips inside Group Creation */
+.selected-hubs-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  min-height: 46px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.hub-tag-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(6, 182, 212, 0.18);
+  border: 1px solid var(--accent-cyan);
+  color: var(--accent-cyan);
+  padding: 3px 8px;
+  border-radius: 16px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  animation: fadeInTag 0.2s ease;
+}
+
+.btn-remove-tag {
+  background: transparent;
+  border: none;
+  color: #ef4444;
+  font-size: 0.8rem;
+  font-weight: 900;
+  cursor: pointer;
+  padding: 0 3px;
+  line-height: 1;
+  border-radius: 50%;
+  transition: all 0.15s;
+}
+.btn-remove-tag:hover {
+  color: #fff;
+  background: #ef4444;
+}
+
+@keyframes fadeInTag {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
 }
 

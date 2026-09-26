@@ -3,20 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>2Guide - Giả Lập Tín Hiệu Thực Địa Thiết Bị Hub</title>
+  <title>2Guide - Giả Lập Tín Hiệu Thực Địa Thiết Bị Hub NEU</title>
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="/css/style.css" />
 
   <style>
     .sim-panel {
-      width: 360px;
+      width: 370px;
       background: var(--bg-secondary);
       border-right: 1px solid var(--border-color);
       display: flex;
       flex-direction: column;
       padding: 14px;
       overflow-y: auto;
+      gap: 12px;
+    }
+    .btn-dir.active {
+      background: var(--accent-cyan);
+      color: #042f2e;
+      font-weight: 800;
     }
   </style>
 </head>
@@ -25,76 +31,101 @@
   <header class="top-navbar">
     <div class="brand-section">
       <span class="brand-badge">2GUIDE SIMULATOR</span>
-      <span class="brand-title">BỘ GIẢ LẬP TÍN HIỆU GPS & PIN HUB THỰC ĐỊA</span>
+      <span class="brand-title">BỘ GIẢ LẬP TÍN HIỆU GPS & PIN HUB NEU</span>
     </div>
 
-    <nav class="nav-actions">
-      <a href="/index.html" class="nav-link">Trung Tâm Điều Hành</a>
-      <a href="/editor.html" class="nav-link" target="_blank">Studio Biên Tập Bản Đồ</a>
-      <a href="/user.html" class="nav-link" target="_blank">Cổng Khách (User)</a>
-      <a href="/simulate.html" class="nav-link active">Giả Lập Thực Địa</a>
-    </nav>
   </header>
 
   <main class="app-container">
     <aside class="sim-panel">
+      <!-- MÔ PHỎNG 1 USER ĐI TUYẾN TÍNH THEO ĐƯỜNG THẲNG -->
       <div class="card-section">
         <div class="section-header">
-          <span>Điều Khiển Mô Phỏng</span>
+          <span>Mô Phỏng 1 Hub Đi Tuyến Tính (Theo Đường Thẳng)</span>
         </div>
-        <p style="font-size: 0.78rem; color: var(--text-dim); margin-bottom: 12px;">
-          Tự động giả lập 5-10 người dùng cầm Hub di chuyển chậm dọc theo các sân và lối đi trong khu di tích, gửi tọa độ POST /api/telemetry mỗi 1.5 giây.
+        <p style="font-size: 0.76rem; color: var(--text-dim); margin-bottom: 10px;">
+          Chỉ định 1 mã Hub cụ thể để di chuyển thẳng một mạch (liên tục tịnh tiến tọa độ và quay góc Yaw theo hướng đi, gửi telemetry mỗi 1s).
         </p>
 
-        <button id="btn-toggle-sim" class="btn btn-primary btn-block" style="margin-bottom: 10px;">
-          Bắt Đầu Mô Phỏng Di Chuyển
-        </button>
+        <div class="form-group">
+          <label class="form-label">Chọn Mã Hub Cần Cho Đi Thẳng:</label>
+          <select id="sim-linear-hub" class="form-control"></select>
+        </div>
 
-        <div style="font-size: 0.75rem; color: var(--text-secondary);">
-          Trạng thái mô phỏng: <strong id="sim-status" style="color: var(--accent-red);">Đang tắt</strong>
+        <div id="sim-hub-group-box" style="font-size: 0.74rem; background: var(--bg-primary); padding: 8px 10px; border-radius: 6px; margin-bottom: 10px; border: 1px solid var(--border-color);">
+          <div>Trạng thái: <strong id="sim-hub-group-text" style="color: var(--accent-cyan);">Đang kiểm tra...</strong></div>
+          <div id="sim-hub-quick-group-btn" style="margin-top: 6px; display: none;">
+            <button type="button" class="btn btn-secondary btn-sm btn-block" id="btn-quick-create-group" style="font-size: 0.72rem; padding: 4px;">
+              Gán Nhanh Vào Đoàn (Chuyển Sang Ghim Màu Xanh Nước)
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Kiểu Di Chuyển Tuyến Tính:</label>
+          <select id="sim-linear-mode" class="form-control">
+            <option value="direction">Đi Thẳng Theo Hướng (Đông / Tây / Nam / Bắc)</option>
+            <option value="points">Click 2 Điểm (A ➔ B) Trên Bản Đồ</option>
+          </select>
+        </div>
+
+        <!-- Chế độ 1: Theo hướng -->
+        <div id="sim-direction-box" class="form-group">
+          <label class="form-label">Chọn Hướng Đi Thẳng:</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+            <button type="button" class="btn btn-secondary btn-sm btn-dir active" data-dir="90">Đông (90°)</button>
+            <button type="button" class="btn btn-secondary btn-sm btn-dir" data-dir="270">Tây (270°)</button>
+            <button type="button" class="btn btn-secondary btn-sm btn-dir" data-dir="0">Bắc (0°)</button>
+            <button type="button" class="btn btn-secondary btn-sm btn-dir" data-dir="180">Nam (180°)</button>
+          </div>
+        </div>
+
+        <!-- Chế độ 2: Chọn 2 điểm A và B -->
+        <div id="sim-points-box" class="form-group" style="display: none;">
+          <div style="font-size: 0.74rem; color: var(--accent-cyan); margin-bottom: 4px;">
+            Click điểm thứ nhất để đặt Điểm A (Xuất phát), click điểm thứ hai để đặt Điểm B (Đích đến).
+          </div>
+          <div style="font-size: 0.72rem; color: var(--text-dim);" id="sim-points-status">
+            Trạng thái: Chưa chọn điểm trên bản đồ
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tốc Độ Đi Bộ (m/giây):</label>
+          <input type="number" id="sim-linear-speed" class="form-control" value="2.0" step="0.5" min="0.5" max="8.0" />
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+          <input type="checkbox" id="chk-auto-follow" checked style="cursor: pointer; width: 16px; height: 16px;" />
+          <label for="chk-auto-follow" style="font-size: 0.76rem; margin: 0; cursor: pointer; color: var(--text-secondary);">
+            Tự động lia Camera theo bước chân Hub
+          </label>
+        </div>
+
+        <button id="btn-toggle-linear-walk" class="btn btn-primary btn-block">
+          Bắt Đầu Đi Thẳng
+        </button>
+      </div>
+
+      <!-- MÔ PHỎNG TỔNG THỂ NHIỀU HUB -->
+      <div class="card-section">
+        <div class="section-header">
+          <span>Mô Phỏng Cả Đoàn (5 Hub Tự Do)</span>
+        </div>
+        <button id="btn-toggle-sim" class="btn btn-secondary btn-block" style="margin-bottom: 6px;">
+          Bắt Đầu Cả Đoàn
+        </button>
+        <div style="font-size: 0.72rem; color: var(--text-secondary);">
+          Trạng thái đoàn: <strong id="sim-status" style="color: var(--accent-red);">Đang tắt</strong>
         </div>
       </div>
 
+      <!-- NHẬT KÝ GÓI TIN -->
       <div class="card-section">
         <div class="section-header">
-          <span>Gửi Tọa Độ Thủ Công</span>
+          <span>Nhật Ký Tọa Độ Đang Gửi</span>
         </div>
-
-        <div class="form-group">
-          <label class="form-label">Chọn Hub ID:</label>
-          <select id="sim-select-hub" class="form-control"></select>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Vĩ Độ (Lat):</label>
-          <input type="number" id="sim-input-lat" class="form-control" step="0.00001" value="21.02875" />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Kinh Độ (Lng):</label>
-          <input type="number" id="sim-input-lng" class="form-control" step="0.00001" value="105.83585" />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Góc Xoay Yaw (°):</label>
-          <input type="number" id="sim-input-yaw" class="form-control" min="0" max="360" value="45" />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Dung Lượng Pin (%):</label>
-          <input type="number" id="sim-input-battery" class="form-control" min="1" max="100" value="88" />
-        </div>
-
-        <button id="btn-send-manual" class="btn btn-secondary btn-block">
-          Gửi Gói Tin Telemetry
-        </button>
-      </div>
-
-      <div class="card-section">
-        <div class="section-header">
-          <span>Nhật Ký Gói Tin Gửi Đi</span>
-        </div>
-        <div id="sim-log-box" style="font-family: monospace; font-size: 0.72rem; color: #a0aec0; background: var(--bg-primary); padding: 8px; border-radius: 4px; max-height: 180px; overflow-y: auto;">
+        <div id="sim-log-box" style="font-family: monospace; font-size: 0.72rem; color: #a0aec0; background: var(--bg-primary); padding: 8px; border-radius: 4px; max-height: 160px; overflow-y: auto;">
           Chưa có gói tin gửi đi...
         </div>
       </div>
@@ -106,8 +137,7 @@
   </main>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="/js/map-common.js"></script>
-  <script src="/js/simulate.js"></script>
+  <script src="/js/map-common.js?v=sim5m_v2"></script>
+  <script src="/js/simulate.js?v=sim5m_v2"></script>
 </body>
 </html>
-

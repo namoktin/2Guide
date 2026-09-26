@@ -25,12 +25,6 @@
       <span class="brand-subtitle" id="site-name-display">Đang tải khu di tích...</span>
     </div>
 
-    <nav class="nav-actions">
-      <a href="/index.html" class="nav-link active">Trung Tâm Điều Hành</a>
-      <a href="/editor.html" class="nav-link" target="_blank">Studio Biên Tập Bản Đồ</a>
-      <a href="/user.html" class="nav-link" target="_blank">Cổng Khách Tham Quan (User)</a>
-      <a href="/simulate.html" class="nav-link" target="_blank">Giả Lập Thực Địa</a>
-    </nav>
   </header>
 
   <!-- KHUNG ỨNG DỤNG CHÍNH -->
@@ -41,47 +35,46 @@
       
       <!-- CÁC TAB ĐIỀU KHIỂN CHỨC NĂNG -->
       <div class="sidebar-tabs">
-        <button class="tab-item active" data-tab="tab-qr">Tạo Mã QR Đoàn</button>
+        <button class="tab-item active" data-tab="tab-qr">Gom Nhóm Hub</button>
         <button class="tab-item" data-tab="tab-groups">Đoàn Đang Hoạt Động</button>
-        <button class="tab-item" data-tab="tab-hubs">Quản Lý Hub & Pin</button>
+        <button class="tab-item" data-tab="tab-hubs">Quản Lý Hub</button>
         <button class="tab-item" data-tab="tab-voice">Phát Thanh / Can Thiệp</button>
       </div>
 
       <div class="sidebar-content">
 
         <!-- ==============================================
-             TAB 1: TẠO MÃ QR ĐOÀN DÙNG 1 LẦN (SINGLE-USE QR)
+             TAB 1: GOM NHÓM THIẾT BỊ HUB CHO ĐOÀN KHÁCH
              ============================================== -->
         <div id="tab-qr" class="tab-panel active">
           <div class="card-section">
             <div class="section-header">
-              <span>Khởi Tạo Mã QR Cho Đoàn Khách Mới</span>
+              <span>Gom Nhóm Thiết Bị Hub</span>
             </div>
             
             <p style="font-size: 0.78rem; color: var(--text-dim); margin-bottom: 12px;">
-              Quy trình: Tiếp nhận số người trong đoàn -> Phát số lượng Hub tương ứng -> Nhập danh sách Hub ID để tạo mã QR dùng 1 lần cho khách quét.
+              Nhập mã các cục Hub phát cho cùng một đoàn để hệ thống tự động kết nối các thành viên với nhau. Khách chỉ cần mở máy Hub là nhìn thấy toàn đoàn.
             </p>
 
             <div class="form-group">
               <label class="form-label">Tên Đoàn Khách / Người Đại Diện:</label>
-              <input type="text" id="input-group-name" class="form-control" placeholder="Ví dụ: Đoàn gia đình Anh Nam (Hà Nội)" />
+              <input type="text" id="input-group-name" class="form-control" placeholder="Ví dụ: Đoàn sinh viên NEU K64" />
             </div>
 
             <div class="form-group">
-              <label class="form-label">Số Lượng Thành Viên Trong Đoàn:</label>
-              <input type="number" id="input-member-count" class="form-control" value="3" min="1" max="50" />
-            </div>
+              <label class="form-label">Danh Sách Thiết Bị Hub Gom Nhóm (Dạng Thẻ Có Thể Xóa):</label>
+              <div id="selected-hubs-container" class="selected-hubs-tags">
+                <span id="empty-selected-hint" style="font-size: 0.74rem; color: var(--text-dim);">Chưa chọn Hub nào. Bấm vào danh sách rảnh rỗi bên dưới để thêm...</span>
+              </div>
 
-            <div class="form-group">
-              <label class="form-label">Danh Sách Mã ID Hub Phát Cho Đoàn (cách nhau bởi dấu phẩy):</label>
-              <input type="text" id="input-hub-ids" class="form-control" placeholder="NHL001, NHL002, NHL003" value="NHL001, NHL002, NHL003" />
-              <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 4px;">
-                Mã Hub có cấu trúc ###*** (ví dụ: NHL001).
+              <div style="display: flex; gap: 6px; margin-top: 4px;">
+                <input type="text" id="input-add-single-hub" class="form-control" placeholder="Hoặc gõ mã Hub (ví dụ: NEU001) rồi bấm Thêm..." style="flex: 1;" />
+                <button type="button" id="btn-add-single-hub" class="btn btn-secondary btn-sm">Thêm Thẻ</button>
               </div>
             </div>
 
             <button id="btn-create-group" class="btn btn-primary btn-block" style="margin-top: 8px;">
-              Tạo Đoàn & Xuất Mã QR Cho Khách
+              Lưu & Gom Nhóm Hub
             </button>
           </div>
 
@@ -108,7 +101,7 @@
             </div>
 
             <p style="font-size: 0.76rem; color: var(--text-dim); margin-bottom: 10px;">
-              Khi khách kết thúc hành trình, bấm "Kết thúc hành trình" để gom toàn bộ dữ liệu di chuyển vào Bản đồ nhiệt và dọn dẹp phiên của khách.
+              Tuyến đường di chuyển của đoàn chỉ hiển thị trong phiên tham quan để Ban Quản Lý theo dõi. Khi bấm "Kết thúc hành trình", toàn bộ dữ liệu tuyến đường di chuyển sẽ được xóa sạch.
             </p>
 
             <div id="active-groups-container" class="item-list">
@@ -118,25 +111,9 @@
         </div>
 
         <!-- ==============================================
-             TAB 3: QUẢN LÝ THIẾT BỊ HUB & PIN THEO CA HÀNH CHÍNH
+             TAB 3: QUẢN LÝ THIẾT BỊ HUB
              ============================================== -->
         <div id="tab-hubs" class="tab-panel">
-          <div class="card-section">
-            <div class="section-header">
-              <span>Chốt Mức Pin Ca Hành Chính</span>
-            </div>
-            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-              <button id="btn-record-shift-start" class="btn btn-secondary btn-sm" style="flex: 1;">
-                Chốt Pin Đầu Ca
-              </button>
-              <button id="btn-record-shift-end" class="btn btn-secondary btn-sm" style="flex: 1;">
-                Chốt Pin Cuối Ca
-              </button>
-            </div>
-            <div style="font-size: 0.74rem; color: var(--text-dim);">
-              Ghi nhận dung lượng pin toàn bộ Hub trong kho vào đầu và cuối ca làm việc theo quy định hành chính.
-            </div>
-          </div>
 
           <div class="card-section">
             <div class="section-header">
@@ -195,32 +172,23 @@
     <section class="map-wrapper">
       <div id="map"></div>
 
-      <!-- BẢNG ĐIỀU KHIỂN NỔI TRÊN BẢN ĐỒ (BẢN ĐỒ NHIỆT & LỚP BẢN ĐỒ) -->
+      <!-- BẢNG ĐIỀU KHIỂN NỔI TRÊN BẢN ĐỒ (LỚP BẢN ĐỒ & HIỆN VẬT) -->
       <div class="map-floating-panel">
         <div class="floating-title">Chế Độ Hiển Thị</div>
 
         <div class="floating-switch-group">
-          <input type="checkbox" id="chk-toggle-heatmap" />
-          <label for="chk-toggle-heatmap" style="cursor: pointer; font-weight: 600;">Bản Đồ Nhiệt (Heatmap)</label>
-        </div>
-
-        <div id="heatmap-filter-box" style="display: none; flex-direction: column; gap: 4px; margin-top: 4px;">
-          <label class="form-label" style="font-size: 0.72rem;">Thời Gian Dữ Liệu Nhiệt:</label>
-          <select id="select-heatmap-range" class="form-control" style="padding: 4px 6px; font-size: 0.76rem;">
-            <option value="day">Hôm Nay (24 Giờ Qua)</option>
-            <option value="week" selected>Tuần Này (7 Ngày Qua)</option>
-            <option value="all">Tất Cả Lịch Sử</option>
-          </select>
-        </div>
-
-        <div class="floating-switch-group" style="margin-top: 6px;">
           <input type="checkbox" id="chk-toggle-zones" checked />
-          <label for="chk-toggle-zones" style="cursor: pointer;">Phân Khu Di Tích</label>
+          <label for="chk-toggle-zones" style="cursor: pointer;">Phân Khu Khuôn Viên</label>
         </div>
 
         <div class="floating-switch-group">
           <input type="checkbox" id="chk-toggle-pois" checked />
-          <label for="chk-toggle-pois" style="cursor: pointer;">Các Điểm Di Tích (POI)</label>
+          <label for="chk-toggle-pois" style="cursor: pointer; font-weight: 700; color: #ef4444;">Điểm Di Tích (POI)</label>
+        </div>
+
+        <div class="floating-switch-group">
+          <input type="checkbox" id="chk-toggle-artifacts" checked />
+          <label for="chk-toggle-artifacts" style="cursor: pointer; font-weight: 700; color: #f59e0b;">Hiện Vật Lịch Sử</label>
         </div>
 
         <div class="floating-switch-group">
@@ -228,49 +196,21 @@
           <label for="chk-toggle-route" style="cursor: pointer;">Tuyến Tham Quan</label>
         </div>
 
-        <div class="form-group" style="margin-top: 6px; margin-bottom: 0;">
-          <label class="form-label" style="font-size: 0.72rem;">Mặt Bằng Hiển Thị:</label>
-          <select id="select-floor-filter" class="form-control" style="padding: 4px 6px; font-size: 0.76rem;">
-            <option value="all">Tất Cả (20 Điểm)</option>
-            <option value="floor-1">Tầng 1 (Điểm 1 - 15)</option>
-            <option value="floor-2">Tầng 2 (Điểm 16 - 20)</option>
-          </select>
+        <div class="floating-switch-group">
+          <input type="checkbox" id="chk-toggle-trajectories" checked />
+          <label for="chk-toggle-trajectories" style="cursor: pointer; color: #38bdf8; font-weight: 700;">Tuyến Đi Của Đoàn (Phiên Này)</label>
         </div>
       </div>
     </section>
 
   </main>
 
-  <!-- MODAL XUẤT MÃ QR CHO ĐOÀN KHÁCH -->
-  <div id="modal-qr" class="modal-overlay">
-    <div class="modal-content">
-      <div class="modal-title">Mã QR Truy Cập Đoàn Khách</div>
-      <div id="modal-group-info" style="font-size: 0.84rem; color: var(--text-secondary); margin-bottom: 8px;">
-        Đoàn: <strong>---</strong> | Số lượng: <strong>0 người</strong>
-      </div>
-      
-      <div class="qr-preview-box">
-        <img id="modal-qr-image" class="qr-image" src="" alt="QR Code Đoàn" />
-      </div>
-
-      <div style="font-size: 0.76rem; color: var(--text-dim); margin-bottom: 14px;">
-        Khách dùng camera điện thoại quét mã này để vào bản đồ di tích và xem vị trí các thành viên trong đoàn.
-      </div>
-
-      <div style="display: flex; gap: 10px;">
-        <button id="btn-print-qr" class="btn btn-secondary" style="flex: 1;">In Mã QR</button>
-        <button id="btn-close-qr-modal" class="btn btn-primary" style="flex: 1;">Đóng</button>
-      </div>
-    </div>
-  </div>
 
   <!-- Thư viện Javascript phụ trợ -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <!-- Leaflet Heat plugin CDN -->
-  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
   
-  <script src="/js/map-common.js"></script>
-  <script src="/js/admin.js"></script>
+  <script src="/js/map-common.js?v=admin5m_v2"></script>
+  <script src="/js/admin.js?v=admin5m_v2"></script>
 </body>
 </html>
 

@@ -139,11 +139,9 @@
       <button id="btn-export-json" class="btn btn-secondary btn-sm">
         Xuất File JSON
       </button>
-      <button id="btn-reset-default" class="btn btn-secondary btn-sm" title="Khôi phục dữ liệu gốc Nhà tù Hỏa Lò">
+      <button id="btn-reset-default" class="btn btn-secondary btn-sm" title="Khôi phục dữ liệu gốc NEU">
         Khôi Phục Gốc
       </button>
-      <a href="/index.html" class="nav-link">Trung Tâm BQL</a>
-      <a href="/user.html" class="nav-link" target="_blank">Cổng Khách</a>
     </div>
   </header>
 
@@ -161,7 +159,11 @@
         
         <div class="mode-selector-grid">
           <button class="mode-btn active" data-mode="poi">
-            <span>[+] ĐIỂM POI</span>
+            <span style="color: #ef4444;">[+] ĐIỂM POI</span>
+            <small style="font-weight: normal; font-size: 0.65rem;">Kéo thả / Thêm</small>
+          </button>
+          <button class="mode-btn" data-mode="artifact">
+            <span style="color: #fbbf24;">[+] HIỆN VẬT</span>
             <small style="font-weight: normal; font-size: 0.65rem;">Kéo thả / Thêm</small>
           </button>
           <button class="mode-btn" data-mode="zone">
@@ -176,21 +178,21 @@
       </div>
 
       <!-- ==============================================
-           PANEL 1: BIÊN TẬP ĐIỂM DI TÍCH (POI)
+           PANEL 0: BIÊN TẬP ĐIỂM THAM QUAN (POIs)
            ============================================== -->
       <div id="panel-poi" class="editor-panel">
         <div class="card-section">
           <div class="section-header">
-            <span>Thông Tin Điểm Di Tích (POI)</span>
-            <button id="btn-add-poi-mode" class="btn btn-primary btn-sm">+ Thêm Điểm Mới</button>
+            <span style="color: #ef4444;">Thông Tin Điểm POI</span>
+            <button id="btn-add-poi-mode" class="btn btn-secondary btn-sm" style="border-color: #ef4444; color: #ef4444;">+ Thêm POI Mới</button>
           </div>
 
           <div style="font-size: 0.74rem; color: var(--text-dim); margin-bottom: 8px;">
-            Mẹo: Bấm lên bản đồ để đặt điểm mới, hoặc <strong>kéo thả trực tiếp bất kỳ ghim nào</strong> để di dời vị trí tức thì.
+            Mẹo: Bấm lên bản đồ để đặt POI mới, hoặc <strong>kéo thả trực tiếp ghim màu đỏ</strong> để di dời vị trí.
           </div>
 
           <div class="form-group">
-            <label class="form-label">Số Thứ Tự & Tên Điểm:</label>
+            <label class="form-label">Số Thứ Tự & Tên Điểm POI:</label>
             <div style="display: flex; gap: 6px;">
               <input type="number" id="input-poi-number" class="form-control" style="width: 70px;" value="1" min="1" max="100" />
               <input type="text" id="input-poi-name" class="form-control" placeholder="Tên điểm tham quan..." />
@@ -198,18 +200,17 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">Tên Tiếng Pháp / Anh (nếu có):</label>
-            <input type="text" id="input-poi-french" class="form-control" placeholder="Nom en français..." />
+            <label class="form-label">Tên Tiếng Anh (English Name):</label>
+            <input type="text" id="input-poi-eng" class="form-control" placeholder="English name..." />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Phân Khu & Mặt Bằng:</label>
+            <label class="form-label">Phân Khu Liên Kết & Tầng:</label>
             <div style="display: flex; gap: 6px;">
-              <input type="text" id="input-poi-zone" class="form-control" placeholder="Khu vực..." value="Khu Trưng Bày" />
-              <select id="select-poi-floor" class="form-control" style="width: 110px;">
-                <option value="1">Tầng 1</option>
-                <option value="2">Tầng 2</option>
+              <select id="select-poi-zone" class="form-control" style="flex: 2;">
+                <!-- Tự động đổ danh sách zones -->
               </select>
+              <input type="number" id="input-poi-floor" class="form-control" style="flex: 1;" placeholder="Tầng" value="1" min="1" max="15" />
             </div>
           </div>
 
@@ -222,27 +223,92 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">Mô Tả Lịch Sử Tóm Tắt:</label>
-            <textarea id="input-poi-desc" class="form-control" rows="2" placeholder="Nội dung giới thiệu lịch sử điểm này..."></textarea>
+            <label class="form-label">Mô Tả Giới Thiệu:</label>
+            <textarea id="input-poi-desc" class="form-control" rows="2" placeholder="Nội dung giới thiệu điểm đến..."></textarea>
           </div>
 
           <div class="form-group">
             <label class="form-label">Lời Thuyết Minh Âm Thanh (Audio Guide):</label>
-            <textarea id="input-poi-audio" class="form-control" rows="2" placeholder="Nội dung tự động đọc phát thanh cho du khách..."></textarea>
+            <textarea id="input-poi-audio" class="form-control" rows="2" placeholder="Nội dung tự động đọc phát thanh tới khách tham quan..."></textarea>
           </div>
 
           <div style="display: flex; gap: 6px; margin-top: 10px;">
-            <button id="btn-update-poi" class="btn btn-primary btn-sm" style="flex: 1;">Cập Nhật Điểm</button>
-            <button id="btn-delete-poi" class="btn btn-danger btn-sm" style="flex: 1;">Xóa Điểm Này</button>
+            <button id="btn-update-poi" class="btn btn-primary btn-sm" style="flex: 1; background: #dc2626; border-color: #b91c1c;">Cập Nhật POI</button>
+            <button id="btn-delete-poi" class="btn btn-danger btn-sm" style="flex: 1;">Xóa POI Này</button>
           </div>
         </div>
 
         <div class="card-section">
           <div class="section-header">
-            <span>Danh Sách 20 Điểm POI (<span id="count-poi-display">0</span>)</span>
+            <span style="color: #ef4444;">Danh Sách POIs (<span id="count-poi-display">0</span>)</span>
           </div>
           <div id="list-all-pois" class="list-scrollable">
             <!-- Render danh sách POIs -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ==============================================
+           PANEL 1: BIÊN TẬP HIỆN VẬT LỊCH SỬ (ARTIFACTS)
+           ============================================== -->
+      <div id="panel-artifact" class="editor-panel" style="display: none;">
+        <div class="card-section">
+          <div class="section-header">
+            <span style="color: #fbbf24;">Thông Tin Hiện Vật Lịch Sử</span>
+            <button id="btn-add-artifact-mode" class="btn btn-secondary btn-sm" style="border-color: #d97706; color: #fbbf24;">+ Thêm Hiện Vật Mới</button>
+          </div>
+
+          <div style="font-size: 0.74rem; color: var(--text-dim); margin-bottom: 8px;">
+            Mẹo: Bấm lên bản đồ để đặt hiện vật mới, hoặc <strong>kéo thả trực tiếp ghim màu vàng</strong> để di dời vị trí.
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Số Thứ Tự & Tên Hiện Vật:</label>
+            <div style="display: flex; gap: 6px;">
+              <input type="number" id="input-art-number" class="form-control" style="width: 70px;" value="1" min="1" max="100" />
+              <input type="text" id="input-art-name" class="form-control" placeholder="Tên hiện vật..." />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Thể Loại & Niên Đại (Năm):</label>
+            <div style="display: flex; gap: 6px;">
+              <input type="text" id="input-art-category" class="form-control" placeholder="Thể loại (Tượng, Phù điêu, Chuông...)" />
+              <input type="text" id="input-art-year" class="form-control" style="width: 110px;" placeholder="Năm (1961...)" />
+            </div>
+          </div>
+
+
+          <div class="form-group">
+            <label class="form-label">Tọa Độ (Lat, Lng):</label>
+            <div style="display: flex; gap: 6px;">
+              <input type="number" id="input-art-lat" class="form-control" step="0.000001" placeholder="Vĩ độ Lat" />
+              <input type="number" id="input-art-lng" class="form-control" step="0.000001" placeholder="Kinh độ Lng" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Mô Tả Lịch Sử Hiện Vật:</label>
+            <textarea id="input-art-desc" class="form-control" rows="2" placeholder="Nội dung giới thiệu lịch sử, xuất xứ của hiện vật..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Lời Thuyết Minh Âm Thanh (Audio Guide):</label>
+            <textarea id="input-art-audio" class="form-control" rows="2" placeholder="Nội dung tự động đọc phát thanh khi du khách nhìn vào..."></textarea>
+          </div>
+
+          <div style="display: flex; gap: 6px; margin-top: 10px;">
+            <button id="btn-update-artifact" class="btn btn-primary btn-sm" style="flex: 1; background: #d97706; border-color: #b45309;">Cập Nhật Hiện Vật</button>
+            <button id="btn-delete-artifact" class="btn btn-danger btn-sm" style="flex: 1;">Xóa Hiện Vật Này</button>
+          </div>
+        </div>
+
+        <div class="card-section">
+          <div class="section-header">
+            <span style="color: #fbbf24;">Danh Sách Hiện Vật (<span id="count-artifact-display">0</span>)</span>
+          </div>
+          <div id="list-all-artifacts" class="list-scrollable">
+            <!-- Render danh sách Hiện Vật -->
           </div>
         </div>
       </div>
@@ -317,7 +383,7 @@
           </p>
 
           <button id="btn-auto-connect-route" class="btn btn-primary btn-block btn-sm" style="margin-bottom: 8px;">
-            Tự Động Nối Theo 20 Điểm POI (1 -> 20)
+            Tự Động Nối Tuyến Theo Các Điểm POI
           </button>
 
           <div style="display: flex; gap: 6px; margin-bottom: 10px;">
@@ -344,7 +410,7 @@
 
       <!-- THANH TRẠNG THÁI TỌA ĐỘ CON TRỎ -->
       <div id="coord-status" class="coord-statusbar">
-        Lat: 21.02534 | Lng: 105.84655 | Zoom: 19
+        Lat: 20.99965 | Lng: 105.84280 | Zoom: 18
       </div>
     </section>
 
