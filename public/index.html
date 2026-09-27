@@ -5,34 +5,75 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>2Guide - Cổng Điều Hành Ban Quản Lý Di Tích</title>
   
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <!-- Master Stylesheet -->
-  <link rel="stylesheet" href="/css/style.css?v=lux_ui_v2" />
+  <link rel="stylesheet" href="/css/style.css?v=lux_strict_v6" />
+
+  <!-- Critical Inline Styles for Absolute Lock Screen Security -->
+  <style>
+    .auth-lock-overlay {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 2147483647 !important;
+      background-color: #07090e !important;
+      background-image: 
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(14, 165, 233, 0.14), transparent 70%),
+        radial-gradient(ellipse 60% 40% at 50% 120%, rgba(30, 58, 138, 0.18), transparent 70%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px) !important;
+      background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px !important;
+      backdrop-filter: blur(24px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 20px !important;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    }
+    .auth-lock-card {
+      width: 100% !important;
+      max-width: 420px !important;
+      background: rgba(15, 23, 42, 0.92) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-radius: 20px !important;
+      padding: 34px 30px !important;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03), 0 24px 60px -12px rgba(0, 0, 0, 0.8), 0 0 40px -10px rgba(14, 165, 233, 0.25) !important;
+      text-align: center !important;
+    }
+  </style>
 </head>
 <body>
 
-  <!-- MÀN HÌNH KHÓA XÁC THỰC MÃ BÍ MẬT BAN QUẢN LÝ -->
+  <!-- MÀN HÌNH KHÓA XÁC THỰC MÃ BÍ MẬT BAN QUẢN LÝ (LUÔN YÊU CẦU MỖI LẦN VÀO / RELOAD TRANG) -->
   <div id="admin-auth-lock-overlay" class="auth-lock-overlay">
     <div class="auth-lock-card">
       <div class="brand-icon-wrapper">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-          <rect x="9" y="10" width="6" height="5" rx="1"/>
-          <path d="M10 10V8a2 2 0 0 1 4 0v2"/>
+          <rect x="9" y="11" width="6" height="4" rx="1"/>
+          <path d="M10 11V9a2 2 0 1 1 4 0v2"/>
         </svg>
       </div>
 
-      <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: #38bdf8; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 20px; padding: 4px 12px; margin-bottom: 12px;">
-        <span style="width: 6px; height: 6px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 8px #22c55e;"></span>
-        <span>Cổng Điều Hành An Toàn</span>
+      <div class="pill-badge" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: #38bdf8; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 20px; padding: 4px 12px; margin-bottom: 12px;">
+        <span class="dot-live" style="width: 6px; height: 6px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 8px #22c55e;"></span>
+        <span>Hệ Thống Điều Hành BQL</span>
       </div>
 
       <h2 class="auth-lock-title">Ban Quản Lý Di Tích</h2>
-      <p class="auth-lock-desc">Khu vực điều hành và giám sát bảo mật. Vui lòng nhập mã bảo mật quản trị để tiếp tục.</p>
+      <p class="auth-lock-desc">Cổng điều hành thực địa trung tâm. Vui lòng xác thực mã bảo mật Ban Quản Lý để mở quyền giám sát thời gian thực.</p>
       
       <div class="auth-form-group">
-        <label for="input-admin-auth-key" class="auth-label">Mã Bí Mật Quản Trị (Admin Key)</label>
+        <label for="input-admin-auth-key" class="auth-label">Mã Bí Mật Quản Trị (Admin Secret Key)</label>
         <div style="position: relative; display: flex; align-items: center;">
           <span style="position: absolute; left: 14px; color: #64748b; display: flex; align-items: center; pointer-events: none;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -55,34 +96,42 @@
       <button type="button" id="btn-submit-admin-auth" class="btn btn-primary btn-block" style="padding: 12px; font-weight: 700; font-size: 0.92rem; border-radius: 10px; background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%); border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 4px 16px rgba(2,132,199,0.35); cursor: pointer;">
         Xác Thực & Mở Giao Diện
       </button>
+
+      <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.06); display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: #64748b;">
+        <a href="/user" style="color: #94a3b8; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; transition: color 0.2s;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <span>Cổng Tham Quan</span>
+        </a>
+        <span>2Guide Security Core</span>
+      </div>
     </div>
   </div>
 
   <!-- BANNER CẢNH BÁO KHẨN CẤP / PHÁT THANH -->
-  <div id="emergency-banner" class="emergency-banner">
+  <div id="emergency-banner" class="emergency-banner" style="display: none;">
     <span id="emergency-banner-text">THÔNG BÁO TỪ BAN QUẢN LÝ</span>
   </div>
 
-  <!-- THANH ĐIỀU HƯỚNG TRÊN CÙNG -->
-  <header class="top-navbar">
+  <!-- THANH ĐIỀU HƯỚNG TRÊN CÙNG (ẨN MẶC ĐỊNH CHO TỚI KHI NHẬP ĐÚNG KEY) -->
+  <header class="top-navbar" id="admin-top-navbar" style="display: none;">
     <div class="brand-section">
       <span class="brand-badge">2GUIDE</span>
       <span class="brand-title">BAN QUẢN LÝ DI TÍCH</span>
       <span class="brand-subtitle" id="site-name-display">Đang tải khu di tích...</span>
     </div>
 
-    <div style="display: flex; align-items: center; gap: 8px;">
-      <button type="button" id="btn-admin-lock-screen" class="btn btn-secondary btn-sm" style="display: none; background: #1e293b; border: 1px solid #334155; color: #f1f5f9; cursor: pointer; padding: 6px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 700;">
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <button type="button" id="btn-admin-lock-screen" class="btn btn-secondary btn-sm" style="background: #1e293b; border: 1px solid #334155; color: #f1f5f9; padding: 5px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; cursor: pointer;">
         🔒 Khóa Màn Hình
       </button>
-      <a href="/api/admin/logout" class="btn btn-secondary btn-sm" style="text-decoration: none; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; padding: 6px 14px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+      <a href="/api/admin/logout" class="btn btn-secondary btn-sm" style="text-decoration: none; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #f87171; padding: 5px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
         Đăng Xuất
       </a>
     </div>
   </header>
 
-  <!-- KHUNG ỨNG DỤNG CHÍNH -->
-  <main class="app-container">
+  <!-- KHUNG ỨNG DỤNG CHÍNH (ẨN MẶC ĐỊNH CHO TỚI KHI NHẬP ĐÚNG KEY) -->
+  <main class="app-container" id="admin-main-app" style="display: none;">
 
     <!-- CỘT ĐIỀU HÀNH BÊN TRÁI (SIDEBAR) -->
     <aside class="sidebar">
@@ -259,12 +308,10 @@
 
   </main>
 
-
   <!-- Thư viện Javascript phụ trợ -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   
-  <script src="/js/map-common.js?v=admin5m_v2"></script>
-  <script src="/js/admin.js?v=lux_ui_v2"></script>
+  <script src="/js/map-common.js?v=lux_strict_v6"></script>
+  <script src="/js/admin.js?v=lux_strict_v6"></script>
 </body>
 </html>
-

@@ -24,19 +24,146 @@
       color: #042f2e;
       font-weight: 800;
     }
+
+    /* Critical Lock Screen Styles */
+    .auth-lock-overlay {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 2147483647 !important;
+      background-color: #07090e !important;
+      background-image: 
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(6, 182, 212, 0.16), transparent 70%),
+        radial-gradient(ellipse 60% 40% at 50% 120%, rgba(30, 58, 138, 0.20), transparent 70%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px) !important;
+      background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px !important;
+      backdrop-filter: blur(24px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 20px !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    }
+    .auth-lock-card {
+      width: 100% !important;
+      max-width: 440px !important;
+      background: rgba(15, 23, 42, 0.94) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-radius: 20px !important;
+      padding: 34px 30px !important;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03), 0 24px 60px -12px rgba(0, 0, 0, 0.8), 0 0 40px -10px rgba(6, 182, 212, 0.25) !important;
+      text-align: center !important;
+      position: relative !important;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+    .shake {
+      animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+    .auth-error-msg {
+      display: none;
+      color: #ef4444;
+      font-size: 0.78rem;
+      font-weight: 600;
+      margin-top: 8px;
+      text-align: left;
+    }
+    .btn-toggle-vis {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      padding: 4px;
+    }
+    .btn-toggle-vis:hover {
+      color: #94a3b8;
+    }
   </style>
 </head>
 <body>
 
-  <header class="top-navbar">
+  <!-- MÀN HÌNH KHÓA XÁC THỰC MÃ BÍ MẬT TRẠM GIẢ LẬP KỸ THUẬT -->
+  <div id="sim-auth-lock-overlay" class="auth-lock-overlay">
+    <div class="auth-lock-card">
+      <div style="width: 52px; height: 52px; margin: 0 auto 16px; border-radius: 14px; background: rgba(6, 182, 212, 0.12); border: 1px solid rgba(6, 182, 212, 0.3); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="22" y1="12" x2="18" y2="12"/>
+          <line x1="6" y1="12" x2="2" y2="12"/>
+          <line x1="12" y1="6" x2="12" y2="2"/>
+          <line x1="12" y1="22" x2="12" y2="18"/>
+        </svg>
+      </div>
+
+      <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: #06b6d4; background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.25); border-radius: 20px; padding: 4px 12px; margin-bottom: 12px;">
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: #06b6d4; box-shadow: 0 0 8px #06b6d4;"></span>
+        <span>Kỹ Thuật Viên Thực Địa</span>
+      </div>
+
+      <h2 style="font-size: 1.35rem; font-weight: 800; color: #f8fafc; margin: 0 0 8px;">Trạm Giả Lập Tín Hiệu Hub</h2>
+      <p style="font-size: 0.82rem; color: #94a3b8; line-height: 1.5; margin: 0 0 22px;">Bộ giả lập thực địa GPS, IMU và Pin dành cho kỹ thuật viên & Ban Quản Lý. Vui lòng xác thực mã bảo mật để nạp dữ liệu 26 Hubs và mở giao diện.</p>
+      
+      <div style="margin-bottom: 16px; text-align: left;">
+        <label for="input-sim-auth-key" style="display: block; font-size: 0.74rem; font-weight: 600; color: #cbd5e1; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Mã Bí Mật Kỹ Thuật / Quản Trị</label>
+        <div style="position: relative; display: flex; align-items: center;">
+          <span style="position: absolute; left: 14px; color: #64748b; display: flex; align-items: center; pointer-events: none;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="7.5" cy="15.5" r="5.5"/>
+              <path d="m21 2-9.6 9.6"/>
+              <path d="m15.5 7.5 3 3"/>
+            </svg>
+          </span>
+          <input type="password" id="input-sim-auth-key" class="form-control is-password" style="padding-left: 42px !important; padding-right: 42px !important; height: 44px; background: rgba(2, 6, 23, 0.8); border: 1px solid rgba(255,255,255,0.12); color: #fff; font-size: 0.88rem; border-radius: 10px; width: 100%; box-sizing: border-box;" placeholder="Nhập mã bí mật (BQL hoặc ESP32)..." autocomplete="off" />
+          <button type="button" id="btn-toggle-sim-key-vis" class="btn-toggle-vis" title="Hiện/ẩn mã">
+            <svg id="sim-svg-eye" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+        <div id="sim-auth-error-msg" class="auth-error-msg"></div>
+      </div>
+
+      <button type="button" id="btn-submit-sim-auth" class="btn btn-primary btn-block" style="padding: 12px; font-weight: 700; font-size: 0.92rem; border-radius: 10px; background: linear-gradient(180deg, #0891b2 0%, #0e7490 100%); border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 4px 16px rgba(8,145,178,0.35); cursor: pointer; color: #fff; width: 100%;">
+        Xác Thực & Mở Trạm Giả Lập
+      </button>
+
+      <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.06); display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: #64748b;">
+        <a href="/user" style="color: #94a3b8; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; transition: color 0.2s;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <span>Cổng Tham Quan</span>
+        </a>
+        <span>2Guide Security Core</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- THANH ĐIỀU HƯỚNG TRÊN CÙNG (ẨN MẶC ĐỊNH CHO TỚI KHI NHẬP ĐÚNG KEY) -->
+  <header class="top-navbar" id="sim-top-navbar" style="display: none;">
     <div class="brand-section">
       <span class="brand-badge">2GUIDE SIMULATOR</span>
       <span class="brand-title">BỘ GIẢ LẬP TÍN HIỆU GPS & PIN HUB NEU</span>
     </div>
-
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <button type="button" id="btn-sim-lock-screen" class="btn btn-secondary btn-sm" style="background: #1e293b; border: 1px solid #334155; color: #f1f5f9; padding: 5px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; cursor: pointer;">
+        🔒 Khóa Trạm
+      </button>
+    </div>
   </header>
 
-  <main class="app-container">
+  <!-- NỘI DUNG ỨNG DỤNG (ẨN MẶC ĐỊNH CHO TỚI KHI NHẬP ĐÚNG KEY) -->
+  <main class="app-container" id="sim-main-app" style="display: none;">
     <aside class="sim-panel">
       <!-- MÔ PHỎNG 1 USER ĐI TUYẾN TÍNH THEO ĐƯỜNG THẲNG -->
       <div class="card-section">
@@ -138,6 +265,6 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="/js/map-common.js?v=clean_v4"></script>
-  <script src="/js/simulate.js?v=clean_v4"></script>
+  <script src="/js/simulate.js?v=sim_sec_v3"></script>
 </body>
 </html>

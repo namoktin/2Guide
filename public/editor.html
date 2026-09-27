@@ -5,12 +5,50 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>2Guide - Studio Biên Tập Bản Đồ Di Tích & Tuyến Tham Quan</title>
 
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <!-- Master Stylesheet -->
-  <link rel="stylesheet" href="/css/style.css?v=lux_ui_v2" />
+  <link rel="stylesheet" href="/css/style.css?v=lux_strict_v6" />
 
+  <!-- Critical Inline Styles for Absolute Lock Screen Security -->
   <style>
+    .auth-lock-overlay {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 2147483647 !important;
+      background-color: #07090e !important;
+      background-image: 
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(245, 158, 11, 0.14), transparent 70%),
+        radial-gradient(ellipse 60% 40% at 50% 120%, rgba(180, 83, 9, 0.18), transparent 70%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px) !important;
+      background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px !important;
+      backdrop-filter: blur(24px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 20px !important;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    }
+    .auth-lock-card {
+      width: 100% !important;
+      max-width: 420px !important;
+      background: rgba(15, 23, 42, 0.92) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-radius: 20px !important;
+      padding: 34px 30px !important;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03), 0 24px 60px -12px rgba(0, 0, 0, 0.8), 0 0 40px -10px rgba(245, 158, 11, 0.25) !important;
+      text-align: center !important;
+    }
     .editor-layout {
       display: flex;
       height: calc(100vh - 54px);
@@ -169,11 +207,19 @@
       <button type="button" id="btn-submit-editor-auth" class="btn btn-primary btn-block" style="padding: 12px; font-weight: 700; font-size: 0.92rem; border-radius: 10px; background: linear-gradient(180deg, #d97706 0%, #b45309 100%); border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 4px 16px rgba(217,119,6,0.35); cursor: pointer;">
         Xác Thực & Mở Studio
       </button>
+
+      <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.06); display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: #64748b;">
+        <a href="/user" style="color: #94a3b8; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; transition: color 0.2s;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <span>Cổng Tham Quan</span>
+        </a>
+        <span>2Guide Security Core</span>
+      </div>
     </div>
   </div>
 
-  <!-- THANH ĐIỀU HƯỚNG TRÊN CÙNG -->
-  <header class="top-navbar">
+  <!-- THANH ĐIỀU HƯỚNG TRÊN CÙNG (ẨN MẶC ĐỊNH CHO TỚI KHI NHẬP ĐÚNG KEY) -->
+  <header class="top-navbar" id="editor-top-navbar" style="display: none;">
     <div class="brand-section">
       <span class="brand-badge">2GUIDE STUDIO</span>
       <span class="brand-title">BIÊN TẬP BẢN ĐỒ DI TÍCH & HIỆN VẬT</span>
@@ -189,7 +235,7 @@
       <button id="btn-reset-default" class="btn btn-secondary btn-sm" title="Khôi phục dữ liệu gốc NEU">
         Khôi Phục Gốc
       </button>
-      <button type="button" id="btn-editor-lock-screen" class="btn btn-secondary btn-sm" style="display: none; background: #1e293b; border: 1px solid #334155; color: #f1f5f9; padding: 5px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; cursor: pointer;">
+      <button type="button" id="btn-editor-lock-screen" class="btn btn-secondary btn-sm" style="background: #1e293b; border: 1px solid #334155; color: #f1f5f9; padding: 5px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; cursor: pointer;">
         🔒 Khóa Studio
       </button>
       <a href="/api/editor/logout" class="btn btn-secondary btn-sm" style="text-decoration: none; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #f87171; padding: 5px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
@@ -198,8 +244,8 @@
     </div>
   </header>
 
-  <!-- GIAO DIỆN BIÊN TẬP CHÍNH -->
-  <main class="editor-layout">
+  <!-- GIAO DIỆN BIÊN TẬP CHÍNH (ẨN MẶC ĐỊNH CHO TỚI KHI NHẬP ĐÚNG KEY) -->
+  <main class="editor-layout" id="editor-main-app" style="display: none;">
 
     <!-- CỘT CÔNG CỤ BÊN TRÁI -->
     <aside class="editor-sidebar">
@@ -212,16 +258,16 @@
         
         <div class="mode-selector-grid">
           <button class="mode-btn active" data-mode="poi">
-            <span style="color: #ef4444;">[+] ĐIỂM POI</span>
-            <small style="font-weight: normal; font-size: 0.65rem;">Kéo thả / Thêm</small>
+            <span style="color: #ef4444;">[+] POI</span>
+            <small style="font-weight: normal; font-size: 0.65rem;">Điểm Di Tích</small>
           </button>
           <button class="mode-btn" data-mode="artifact">
             <span style="color: #fbbf24;">[+] HIỆN VẬT</span>
-            <small style="font-weight: normal; font-size: 0.65rem;">Kéo thả / Thêm</small>
+            <small style="font-weight: normal; font-size: 0.65rem;">Kỷ Vật / Đồ Thờ</small>
           </button>
           <button class="mode-btn" data-mode="zone">
-            <span>[+] VÙNG PHÂN KHU</span>
-            <small style="font-weight: normal; font-size: 0.65rem;">Vẽ đa giác</small>
+            <span style="color: #38bdf8;">[+] PHÂN KHU</span>
+            <small style="font-weight: normal; font-size: 0.65rem;">Vẽ Đa Giác</small>
           </button>
         </div>
       </div>
@@ -237,7 +283,7 @@
           </div>
 
           <div style="font-size: 0.74rem; color: var(--text-dim); margin-bottom: 8px;">
-            Mẹo: Bấm lên bản đồ để đặt POI mới, hoặc <strong>kéo thả trực tiếp ghim màu đỏ</strong> để di dời vị trí.
+            Mẹo: Bấm nút <strong>"+ Thêm POI Mới"</strong> rồi <strong>click vào bất kỳ chỗ nào trên bản đồ</strong> để đặt điểm tại đó. Kéo thả ghim đỏ để chỉnh vị trí.
           </div>
 
           <div class="form-group">
@@ -308,7 +354,7 @@
           </div>
 
           <div style="font-size: 0.74rem; color: var(--text-dim); margin-bottom: 8px;">
-            Mẹo: Bấm lên bản đồ để đặt hiện vật mới, hoặc <strong>kéo thả trực tiếp ghim màu vàng</strong> để di dời vị trí.
+            Mẹo: Bấm nút <strong>"+ Thêm Hiện Vật Mới"</strong> rồi <strong>click vào bất kỳ chỗ nào trên bản đồ</strong> để đặt hiện vật tại đó. Kéo thả ghim vàng để chỉnh vị trí.
           </div>
 
           <div class="form-group">
@@ -327,6 +373,12 @@
             </div>
           </div>
 
+          <div class="form-group">
+            <label class="form-label">Phân Khu Liên Kết:</label>
+            <select id="select-art-zone" class="form-control">
+              <!-- Tự động đổ danh sách zones -->
+            </select>
+          </div>
 
           <div class="form-group">
             <label class="form-label">Tọa Độ (Lat, Lng):</label>
@@ -439,7 +491,7 @@
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="/js/map-common.js?v=clean_noroute_v2"></script>
-  <script src="/js/editor.js?v=lux_ui_v2"></script>
+  <script src="/js/map-common.js?v=lux_editor_v9"></script>
+  <script src="/js/editor.js?v=lux_editor_v9"></script>
 </body>
 </html>

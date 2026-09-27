@@ -12,7 +12,6 @@ class SiteModel {
   }
 
   getSiteData() {
-    this.siteData.tourRoute = [];
     return this.siteData;
   }
 
@@ -26,10 +25,10 @@ class SiteModel {
     if (locationName) this.siteData.locationName = locationName;
     if (center) this.siteData.center = center;
     if (zoom) this.siteData.zoom = zoom;
-    if (zones) this.siteData.zones = zones;
-    if (pois) this.siteData.pois = pois;
-    if (artifacts) this.siteData.artifacts = artifacts;
-    this.siteData.tourRoute = [];
+    if (Array.isArray(zones)) this.siteData.zones = zones;
+    if (Array.isArray(pois)) this.siteData.pois = pois;
+    if (Array.isArray(artifacts)) this.siteData.artifacts = artifacts;
+    if (Array.isArray(tourRoute)) this.siteData.tourRoute = tourRoute;
 
     const fileContent = `/**
  * 2Guide - Dữ liệu thực địa: ${this.siteData.siteName || 'Khu Di Tích'}

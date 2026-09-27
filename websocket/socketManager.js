@@ -34,7 +34,7 @@ class SocketManager {
             const clientIp = ws._socket?.remoteAddress || '';
             const isLocal = clientIp === '::1' || clientIp === '127.0.0.1' || clientIp.includes('127.0.0.1');
 
-            if (adminKey !== ADMIN_SECRET_KEY && adminKey !== 'bql_sec_2026_x89a3f' && !isLocal) {
+            if (adminKey !== ADMIN_SECRET_KEY && adminKey !== 'bql_sec_2026_x89a3f') {
               console.warn(`[WS AN NINH] CẢNH BÁO: Client ${clientIp} cố tình đăng ký quyền Admin mà không có mã hợp lệ!`);
               ws.send(JSON.stringify({
                 type: 'AUTH_FAILED',

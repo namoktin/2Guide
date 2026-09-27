@@ -1,0 +1,200 @@
+<!-- BANNER CẢNH BÁO KHẨN CẤP / PHÁT THANH -->
+<div id="emergency-banner" class="emergency-banner" style="display: none;">
+  <span id="emergency-banner-text">THÔNG BÁO TỪ BAN QUẢN LÝ</span>
+</div>
+
+<!-- THANH ĐIỀU HƯỚNG TRÊN CÙNG -->
+<header class="top-navbar" id="admin-top-navbar" style="display: flex;">
+  <div class="brand-section">
+    <span class="brand-badge">2GUIDE</span>
+    <span class="brand-title">BAN QUẢN LÝ DI TÍCH</span>
+    <span class="brand-subtitle" id="site-name-display">Đang tải khu di tích...</span>
+  </div>
+
+  <div style="display: flex; gap: 8px; align-items: center;">
+    <button type="button" id="btn-admin-lock-screen" class="btn btn-secondary btn-sm" style="background: #1e293b; border: 1px solid #334155; color: #f1f5f9; padding: 5px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; cursor: pointer;">
+      🔒 Khóa Màn Hình
+    </button>
+    <button type="button" onclick="window.location.reload();" class="btn btn-secondary btn-sm" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #f87171; padding: 5px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+      Đăng Xuất
+    </button>
+  </div>
+</header>
+
+<!-- KHUNG ỨNG DỤNG CHÍNH -->
+<main class="app-container" id="admin-main-app" style="display: flex;">
+
+  <!-- CỘT ĐIỀU HÀNH BÊN TRÁI (SIDEBAR) -->
+  <aside class="sidebar">
+    
+    <!-- CÁC TAB ĐIỀU KHIỂN CHỨC NĂNG -->
+    <div class="sidebar-tabs">
+      <button class="tab-item active" data-tab="tab-qr">Gom Nhóm Hub</button>
+      <button class="tab-item" data-tab="tab-groups">Đoàn Đang Hoạt Động</button>
+      <button class="tab-item" data-tab="tab-hubs">Quản Lý Hub</button>
+      <button class="tab-item" data-tab="tab-voice">Phát Thanh / Can Thiệp</button>
+    </div>
+
+    <div class="sidebar-content">
+
+      <!-- ==============================================
+           TAB 1: GOM NHÓM THIẾT BỊ HUB CHO ĐOÀN KHÁCH
+           ============================================== -->
+      <div id="tab-qr" class="tab-panel active">
+        <div class="card-section">
+          <div class="section-header">
+            <span>Gom Nhóm Thiết Bị Hub</span>
+          </div>
+          
+          <p style="font-size: 0.78rem; color: var(--text-dim); margin-bottom: 12px;">
+            Nhập mã các cục Hub phát cho cùng một đoàn để hệ thống tự động kết nối các thành viên với nhau. Khách chỉ cần mở máy Hub là nhìn thấy toàn đoàn.
+          </p>
+
+          <div class="form-group">
+            <label class="form-label">Tên Đoàn Khách / Người Đại Diện:</label>
+            <input type="text" id="input-group-name" class="form-control" placeholder="Ví dụ: Đoàn sinh viên NEU K64" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Danh Sách Thiết Bị Hub Gom Nhóm (Dạng Thẻ Có Thể Xóa):</label>
+            <div id="selected-hubs-container" class="selected-hubs-tags">
+              <span id="empty-selected-hint" style="font-size: 0.74rem; color: var(--text-dim);">Chưa chọn Hub nào. Bấm vào danh sách rảnh rỗi bên dưới để thêm...</span>
+            </div>
+
+            <div style="display: flex; gap: 6px; margin-top: 4px;">
+              <input type="text" id="input-add-single-hub" class="form-control" placeholder="Hoặc gõ mã Hub (ví dụ: NEU001) rồi bấm Thêm..." style="flex: 1;" />
+              <button type="button" id="btn-add-single-hub" class="btn btn-secondary btn-sm">Thêm Thẻ</button>
+            </div>
+          </div>
+
+          <button id="btn-create-group" class="btn btn-primary btn-block" style="margin-top: 8px;">
+            Lưu & Gom Nhóm Hub
+          </button>
+        </div>
+
+        <!-- Danh sách Hub đang sẵn sàng tại quầy -->
+        <div class="card-section">
+          <div class="section-header">
+            <span>Hub Sẵn Sàng Tại Quầy (Rảnh Rỗi)</span>
+            <span id="count-idle-hubs" class="hub-badge badge-online">0 Hub</span>
+          </div>
+          <div id="idle-hubs-chips" style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <!-- Javascript render chips -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ==============================================
+           TAB 2: ĐOÀN KHÁCH ĐANG HOẠT ĐỘNG (ACTIVE TOURS)
+           ============================================== -->
+      <div id="tab-groups" class="tab-panel">
+        <div class="card-section">
+          <div class="section-header">
+            <span>Đoàn Khách Đang Tham Quan Thực Địa</span>
+            <span id="active-groups-count" class="hub-badge badge-active">0 Đoàn</span>
+          </div>
+
+          <p style="font-size: 0.76rem; color: var(--text-dim); margin-bottom: 10px;">
+            Tuyến đường di chuyển của đoàn chỉ hiển thị trong phiên tham quan để Ban Quản Lý theo dõi. Khi bấm "Kết thúc hành trình", toàn bộ dữ liệu tuyến đường di chuyển sẽ được xóa sạch.
+          </p>
+
+          <div id="active-groups-container" class="item-list">
+            <!-- Render danh sách đoàn -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ==============================================
+           TAB 3: QUẢN LÝ THIẾT BỊ HUB
+           ============================================== -->
+      <div id="tab-hubs" class="tab-panel">
+
+        <div class="card-section">
+          <div class="section-header">
+            <span>Toàn Bộ Thiết Bị Hub (<span id="total-hubs-count">0</span>)</span>
+          </div>
+          <div id="all-hubs-container" class="item-list">
+            <!-- Render toàn bộ Hubs -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ==============================================
+           TAB 4: PHÁT THANH KHẨN CẤP / CAN THIỆP LUỒNG TÍN HIỆU
+           ============================================== -->
+      <div id="tab-voice" class="tab-panel">
+        <div class="card-section">
+          <div class="section-header">
+            <span>Can Thiệp Luồng Tín Hiệu & Phát Thanh</span>
+          </div>
+
+          <p style="font-size: 0.78rem; color: var(--text-dim); margin-bottom: 12px;">
+            Cho phép Ban Quản Lý nói trực tiếp hoặc gửi thông báo tới Hub bất kỳ hoặc toàn bộ người dùng (Quyền hạn quản trị viên cao nhất).
+          </p>
+
+          <div class="form-group">
+            <label class="form-label">Phạm Vi Phát Thông Báo:</label>
+            <select id="select-broadcast-target" class="form-control">
+              <option value="ALL_HUBS">Toàn Bộ Thiết Bị & Khách Tham Quan</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Mức Độ Ưu Tiên:</label>
+            <select id="select-broadcast-urgency" class="form-control">
+              <option value="normal">Thông báo hướng dẫn bình thường</option>
+              <option value="high">Cảnh báo nhắc nhở khu vực</option>
+              <option value="emergency">Khẩn cấp (Tập trung, thời tiết xấu, lạc đoàn)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Nội Dung Thông Báo (Tự động đọc giọng nói tới Hub):</label>
+            <textarea id="input-broadcast-message" class="form-control" rows="3" placeholder="Nhập thông báo của ban quản lý... Ví dụ: Xin quý khách lưu ý di tích sắp đến giờ đóng cửa, xin vui lòng di chuyển về cổng Đại Trung."></textarea>
+          </div>
+
+          <button id="btn-send-broadcast" class="btn btn-danger btn-block">
+            Phát Lệnh Can Thiệp Tín Hiệu
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- BẢN ĐỒ THỰC ĐỊA 2D (LEAFLET) -->
+  <section class="map-wrapper">
+    <div id="map"></div>
+
+    <!-- BẢNG ĐIỀU KHIỂN NỔI TRÊN BẢN ĐỒ (LỚP BẢN ĐỒ & HIỆN VẬT) -->
+    <div class="map-floating-panel">
+      <div class="floating-title">Chế Độ Hiển Thị</div>
+
+      <div class="floating-switch-group">
+        <input type="checkbox" id="chk-toggle-zones" checked />
+        <label for="chk-toggle-zones" style="cursor: pointer;">Phân Khu Khuôn Viên</label>
+      </div>
+
+      <div class="floating-switch-group">
+        <input type="checkbox" id="chk-toggle-pois" checked />
+        <label for="chk-toggle-pois" style="cursor: pointer; font-weight: 700; color: #ef4444;">Điểm Di Tích (POI)</label>
+      </div>
+
+      <div class="floating-switch-group">
+        <input type="checkbox" id="chk-toggle-artifacts" checked />
+        <label for="chk-toggle-artifacts" style="cursor: pointer; font-weight: 700; color: #f59e0b;">Hiện Vật Lịch Sử</label>
+      </div>
+
+      <div class="floating-switch-group">
+        <input type="checkbox" id="chk-toggle-route" checked />
+        <label for="chk-toggle-route" style="cursor: pointer;">Tuyến Tham Quan</label>
+      </div>
+
+      <div class="floating-switch-group">
+        <input type="checkbox" id="chk-toggle-trajectories" checked />
+        <label for="chk-toggle-trajectories" style="cursor: pointer; color: #38bdf8; font-weight: 700;">Tuyến Đi Của Đoàn (Phiên Này)</label>
+      </div>
+    </div>
+  </section>
+
+</main>

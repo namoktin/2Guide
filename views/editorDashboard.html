@@ -1,0 +1,256 @@
+<!-- THANH ĐIỀU HƯỚNG TRÊN CÙNG -->
+<header class="top-navbar" id="editor-top-navbar" style="display: flex;">
+  <div class="brand-section">
+    <span class="brand-badge">2GUIDE STUDIO</span>
+    <span class="brand-title">BIÊN TẬP BẢN ĐỒ DI TÍCH & HIỆN VẬT</span>
+  </div>
+
+  <div style="display: flex; gap: 8px; align-items: center;">
+    <button id="btn-save-server" class="btn btn-success btn-sm">
+      Lưu Vào Hệ Thống
+    </button>
+    <button id="btn-export-json" class="btn btn-secondary btn-sm">
+      Xuất File JSON
+    </button>
+    <button id="btn-reset-default" class="btn btn-secondary btn-sm" title="Khôi phục dữ liệu gốc NEU">
+      Khôi Phục Gốc
+    </button>
+    <button type="button" id="btn-editor-lock-screen" class="btn btn-secondary btn-sm" style="background: #1e293b; border: 1px solid #334155; color: #f1f5f9; padding: 5px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; cursor: pointer;">
+      🔒 Khóa Studio
+    </button>
+    <button type="button" onclick="window.location.reload();" class="btn btn-secondary btn-sm" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #f87171; padding: 5px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+      Đăng Xuất
+    </button>
+  </div>
+</header>
+
+<!-- GIAO DIỆN BIÊN TẬP CHÍNH -->
+<main class="editor-layout" id="editor-main-app" style="display: flex;">
+
+  <!-- CỘT CÔNG CỤ BÊN TRÁI -->
+  <aside class="editor-sidebar">
+
+    <!-- CHỌN CHẾ ĐỘ BIÊN TẬP -->
+    <div class="card-section">
+      <div class="section-header">
+        <span>Chế Độ Biên Tập</span>
+      </div>
+      
+      <div class="mode-selector-grid">
+        <button class="mode-btn active" data-mode="poi">
+          <span style="color: #ef4444;">[+] ĐIỂM POI</span>
+          <small style="font-weight: normal; font-size: 0.65rem;">Kéo thả / Thêm</small>
+        </button>
+        <button class="mode-btn" data-mode="artifact">
+          <span style="color: #fbbf24;">[+] HIỆN VẬT</span>
+          <small style="font-weight: normal; font-size: 0.65rem;">Kéo thả / Thêm</small>
+        </button>
+        <button class="mode-btn" data-mode="zone">
+          <span>[+] VÙNG PHÂN KHU</span>
+          <small style="font-weight: normal; font-size: 0.65rem;">Vẽ đa giác</small>
+        </button>
+      </div>
+    </div>
+
+    <!-- ==============================================
+         PANEL 0: BIÊN TẬP ĐIỂM THAM QUAN (POIs)
+         ============================================== -->
+    <div id="panel-poi" class="editor-panel">
+      <div class="card-section">
+        <div class="section-header">
+          <span style="color: #ef4444;">Thông Tin Điểm POI</span>
+          <button id="btn-add-poi-mode" class="btn btn-secondary btn-sm" style="border-color: #ef4444; color: #ef4444;">+ Thêm POI Mới</button>
+        </div>
+
+        <div style="font-size: 0.74rem; color: var(--text-dim); margin-bottom: 8px;">
+          Mẹo: Bấm lên bản đồ để đặt POI mới, hoặc <strong>kéo thả trực tiếp ghim màu đỏ</strong> để di dời vị trí.
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Số Thứ Tự & Tên Điểm POI:</label>
+          <div style="display: flex; gap: 6px;">
+            <input type="number" id="input-poi-number" class="form-control" style="width: 70px;" value="1" min="1" max="100" />
+            <input type="text" id="input-poi-name" class="form-control" placeholder="Tên điểm tham quan..." />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tên Tiếng Anh (English Name):</label>
+          <input type="text" id="input-poi-eng" class="form-control" placeholder="English name..." />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tọa Độ [Vĩ Độ Lat, Kinh Độ Lng]:</label>
+          <div style="display: flex; gap: 6px;">
+            <input type="number" step="0.000001" id="input-poi-lat" class="form-control" placeholder="Lat..." />
+            <input type="number" step="0.000001" id="input-poi-lng" class="form-control" placeholder="Lng..." />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Bán Kính Kích Hoạt Tự Động (Bán kính mét):</label>
+          <input type="number" id="input-poi-radius" class="form-control" value="15" min="3" max="100" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Thuộc Phân Khu Nào:</label>
+          <select id="select-poi-zone" class="form-control">
+            <!-- Render options -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Bài Thuyết Minh Lịch Sử (TTS Tiếng Việt):</label>
+          <textarea id="input-poi-desc" class="form-control" rows="3" placeholder="Nhập bài thuyết minh chi tiết cho POI này..."></textarea>
+        </div>
+
+        <div style="display: flex; gap: 6px; margin-top: 10px;">
+          <button id="btn-update-poi" class="btn btn-primary btn-sm" style="flex: 1;">Lưu Điểm POI</button>
+          <button id="btn-delete-poi" class="btn btn-danger btn-sm" style="flex: 1;">Xóa Điểm Này</button>
+        </div>
+      </div>
+
+      <div class="card-section">
+        <div class="section-header">
+          <span>Danh Sách POIs (<span id="count-poi-display">0</span>)</span>
+        </div>
+        <div id="list-all-pois" class="list-scrollable">
+          <!-- Render danh sách POIs -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ==============================================
+         PANEL 1: BIÊN TẬP HIỆN VẬT LỊCH SỬ (ARTIFACTS)
+         ============================================== -->
+    <div id="panel-artifact" class="editor-panel" style="display: none;">
+      <div class="card-section">
+        <div class="section-header">
+          <span style="color: #fbbf24;">Thông Tin Hiện Vật</span>
+          <button id="btn-add-artifact-mode" class="btn btn-secondary btn-sm" style="border-color: #fbbf24; color: #fbbf24;">+ Thêm Hiện Vật</button>
+        </div>
+
+        <div style="font-size: 0.74rem; color: var(--text-dim); margin-bottom: 8px;">
+          Mẹo: Bấm lên bản đồ để đặt hiện vật, hoặc <strong>kéo thả ghim màu vàng</strong> để di dời.
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tên Hiện Vật & Mã Thiết Bị Gắn (Hub):</label>
+          <div style="display: flex; gap: 6px;">
+            <input type="text" id="input-art-name" class="form-control" placeholder="Tên hiện vật..." style="flex: 2;" />
+            <input type="text" id="input-art-hub" class="form-control" placeholder="Mã Hub..." style="flex: 1;" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tọa Độ [Vĩ Độ Lat, Kinh Độ Lng]:</label>
+          <div style="display: flex; gap: 6px;">
+            <input type="number" step="0.000001" id="input-art-lat" class="form-control" placeholder="Lat..." />
+            <input type="number" step="0.000001" id="input-art-lng" class="form-control" placeholder="Lng..." />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Góc Nhìn Kích Hoạt IMU (Heading Min - Max):</label>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <input type="number" id="input-art-heading-min" class="form-control" placeholder="Từ độ (0-360)..." value="0" />
+            <span>➔</span>
+            <input type="number" id="input-art-heading-max" class="form-control" placeholder="Đến độ..." value="360" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Bài Giới Thiệu Hiện Vật (TTS):</label>
+          <textarea id="input-art-desc" class="form-control" rows="3" placeholder="Thông tin lịch sử xuất xứ của hiện vật..."></textarea>
+        </div>
+
+        <div style="display: flex; gap: 6px; margin-top: 10px;">
+          <button id="btn-update-artifact" class="btn btn-primary btn-sm" style="flex: 1;">Lưu Hiện Vật</button>
+          <button id="btn-delete-artifact" class="btn btn-danger btn-sm" style="flex: 1;">Xóa Hiện Vật</button>
+        </div>
+      </div>
+
+      <div class="card-section">
+        <div class="section-header">
+          <span>Danh Sách Hiện Vật (<span id="count-artifact-display">0</span>)</span>
+        </div>
+        <div id="list-all-artifacts" class="list-scrollable">
+          <!-- Render danh sách artifacts -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ==============================================
+         PANEL 2: VẼ VÙNG PHÂN KHU (ZONES - POLYGON)
+         ============================================== -->
+    <div id="panel-zone" class="editor-panel" style="display: none;">
+      <div class="card-section">
+        <div class="section-header">
+          <span style="color: #3b82f6;">Vẽ Vùng Phân Khu (Polygon)</span>
+        </div>
+
+        <div style="font-size: 0.74rem; color: var(--text-dim); margin-bottom: 8px;">
+          Bấm liên tiếp lên bản đồ để đánh dấu các đỉnh của ranh giới khu vực. Bấm "Khép Kín Vùng" để hoàn tất.
+        </div>
+
+        <div style="display: flex; gap: 6px; margin-bottom: 10px;">
+          <button id="btn-start-zone-draw" class="btn btn-primary btn-sm" style="flex: 1;">Bắt Đầu Vẽ Vùng</button>
+          <button id="btn-finish-zone-draw" class="btn btn-success btn-sm" style="flex: 1;">Khép Kín Vùng</button>
+          <button id="btn-cancel-zone-draw" class="btn btn-secondary btn-sm">Hủy</button>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tên Phân Khu Đầy Đủ:</label>
+          <input type="text" id="input-zone-name" class="form-control" placeholder="Ví dụ: Khu Giảng Đường A2" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tên Viết Tắt (Hiện Nhãn Trên Map):</label>
+          <input type="text" id="input-zone-short" class="form-control" placeholder="Ví dụ: Tòa Nhà A2" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Màu Sắc Đại Diện & Tầng:</label>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="color" id="input-zone-color" value="#3b82f6" style="width: 44px; height: 32px; border: 1px solid var(--border-color); background: none; cursor: pointer; border-radius: 4px;" />
+            <select id="select-zone-floor" class="form-control" style="flex: 1;">
+              <option value="1">Mặt bằng Tầng 1</option>
+              <option value="2">Mặt bằng Tầng 2</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 6px; margin-top: 10px;">
+          <button id="btn-update-zone" class="btn btn-primary btn-sm" style="flex: 1;">Lưu Vùng Phân Khu</button>
+          <button id="btn-delete-zone" class="btn btn-danger btn-sm" style="flex: 1;">Xóa Vùng Này</button>
+        </div>
+      </div>
+
+      <div class="card-section">
+        <div class="section-header">
+          <span>Danh Sách Phân Khu (<span id="count-zone-display">0</span>)</span>
+        </div>
+        <div id="list-all-zones" class="list-scrollable">
+          <!-- Render danh sách zones -->
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- BẢN ĐỒ CANVAS GOOGLE MAPS -->
+  <section class="map-wrapper">
+    <div id="editor-map" style="width: 100%; height: 100%;"></div>
+
+    <!-- BANNER NHẮC NHỞ TRẠNG THÁI -->
+    <div id="drawing-hint" class="drawing-hint-banner" style="display: none;">
+      Đang vẽ...
+    </div>
+
+    <!-- THANH TRẠNG THÁI TỌA ĐỘ CON TRỎ -->
+    <div id="coord-status" class="coord-statusbar">
+      Lat: 20.99965 | Lng: 105.84280 | Zoom: 18
+    </div>
+  </section>
+
+</main>

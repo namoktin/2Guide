@@ -13,7 +13,8 @@ const {
   PORT,
   SITE_NAME,
   SITE_CODE,
-  ADMIN_SECRET_PATH
+  ADMIN_SECRET_PATH,
+  EDITOR_SECRET_PATH
 } = require('./config/appConfig');
 
 // Nạp các thành phần MVC
@@ -58,7 +59,7 @@ server.listen(PORT, async () => {
   console.log(`- Cổng Khách Tham Quan:         http://localhost:${PORT}/user`);
   console.log(`- Cổng Ban Quản Lý (MÃ BÍ MẬT): http://localhost:${PORT}${ADMIN_SECRET_PATH}`);
   console.log(`- Cổng Giả Lập:                 http://localhost:${PORT}/simulate`);
-  console.log(`- Studio Biên Tập Bản Đồ:       http://localhost:${PORT}/editor`);
+  console.log(`- Studio Biên Tập (MÃ BÍ MẬT):  http://localhost:${PORT}${EDITOR_SECRET_PATH}`);
   console.log(`- Trạm Kiểm Thử Phần Cứng:      http://localhost:${PORT}/test.html`);
   console.log(`=======================================================`);
 

@@ -1,20 +1,138 @@
 /**
  * 2Guide - editor.js
- * Studio Biên Tập Bản Đồ Di Tích: Kéo thả POI & Hiện Vật, vẽ vùng phân khu (Polygon), vẽ tuyến đường tham quan
+ * Studio Biên Tập Bản Đồ Di Tích: Kéo thả POI & Hiện Vật, vẽ vùng phân khu (Polygon)
+ * Tính năng thông minh: 
+ *  - Click trực tiếp lên bất kỳ điểm nào trên bản đồ để thêm POI / Hiện vật mới
+ *  - Bấm vào mục đang chọn trong danh sách hoặc trên map để HỦY CHỌN (Deselect / Toggle)
+ *  - Click / rê chuột trên bản đồ hoàn toàn tự do, tuyệt đối không bị nhảy hay chạy theo chuột
+ * Bảo mật: Chỉ khởi tạo Bản đồ Leaflet và kích hoạt công cụ khi đã xác thực đúng Secret Key của Map Studio.
  */
 
-document.addEventListener('DOMContentLoaded', async () => {
-  // 1. KHỞI TẠO BẢN ĐỒ
+document.addEventListener('DOMContentLoaded', () => {
+  // 1. MÀN HÌNH KHÓA XÁC THỰC MÃ BÍ MẬT MAP STUDIO
+  const authOverlay = document.getElementById('editor-auth-lock-overlay');
+  const inputKey = document.getElementById('input-editor-auth-key');
+  const btnSubmitAuth = document.getElementById('btn-submit-editor-auth');
+  const authErrorMsg = document.getElementById('editor-auth-error-msg');
+  const authCard = authOverlay ? authOverlay.querySelector('.auth-lock-card') : null;
+  const btnToggleVis = document.getElementById('btn-toggle-editor-key-vis');
+
+  if (btnToggleVis && inputKey) {
+    let isShowing = false;
+    btnToggleVis.addEventListener('click', () => {
+      isShowing = !isShowing;
+      inputKey.type = isShowing ? 'text' : 'password';
+      inputKey.classList.toggle('is-password', !isShowing);
+      const svg = document.getElementById('editor-svg-eye');
+      if (svg) {
+        svg.innerHTML = isShowing
+          ? '<path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/>'
+          : '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>';
+      }
+    });
+  }
+
+  async function handleEditorAuthSubmit() {
+    const entered = (inputKey ? inputKey.value : '').trim();
+    if (!entered) {
+      if (authErrorMsg) {
+        authErrorMsg.textContent = 'Vui lòng nhập mã bí mật Map Studio!';
+        authErrorMsg.style.display = 'block';
+      }
+      return;
+    }
+
+    if (btnSubmitAuth) {
+      btnSubmitAuth.disabled = true;
+      btnSubmitAuth.innerHTML = '<span style="display: inline-flex; align-items: center; gap: 6px;">Đang xác thực bảo mật...</span>';
+    }
+
+    try {
+      const res = await fetch('/api/editor/verify-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ editorKey: entered, key: entered })
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Gỡ màn hình khóa khỏi DOM
+        if (authOverlay) authOverlay.remove();
+
+        // Mở hiển thị thanh điều hướng và khung Studio
+        const topNav = document.getElementById('editor-top-navbar');
+        const mainApp = document.getElementById('editor-main-app');
+        if (topNav) topNav.style.display = 'flex';
+        if (mainApp) mainApp.style.display = 'flex';
+
+        // Khởi động Studio biên tập bản đồ
+        initEditorDashboard(entered);
+      } else {
+        if (authErrorMsg) {
+          authErrorMsg.textContent = data.error || 'Mã bí mật Map Studio không chính xác!';
+          authErrorMsg.style.display = 'block';
+        }
+        if (authCard) {
+          authCard.classList.remove('shake');
+          void authCard.offsetWidth;
+          authCard.classList.add('shake');
+        }
+        if (btnSubmitAuth) {
+          btnSubmitAuth.disabled = false;
+          btnSubmitAuth.innerHTML = 'Xác Thực & Mở Studio';
+        }
+        if (inputKey) inputKey.select();
+      }
+    } catch (e) {
+      if (authErrorMsg) {
+        authErrorMsg.textContent = 'Lỗi kết nối máy chủ xác thực: ' + e.message;
+        authErrorMsg.style.display = 'block';
+      }
+      if (btnSubmitAuth) {
+        btnSubmitAuth.disabled = false;
+        btnSubmitAuth.innerHTML = 'Xác Thực & Mở Studio';
+      }
+    }
+  }
+
+  if (btnSubmitAuth) btnSubmitAuth.addEventListener('click', handleEditorAuthSubmit);
+  if (inputKey) {
+    inputKey.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleEditorAuthSubmit();
+    });
+    setTimeout(() => inputKey.focus(), 150);
+  }
+});
+
+/**
+ * 2. KHỞI TẠO STUDIO BIÊN TẬP (CHỈ CHẠY SAU KHI ĐÃ NHẬP ĐÚNG KEY)
+ */
+async function initEditorDashboard(secretKey) {
+  const getEditorKey = () => secretKey;
+
+  // Nút Khóa Studio (Tải lại trang và xóa sạch RAM)
+  const btnLockScreen = document.getElementById('btn-editor-lock-screen');
+  if (btnLockScreen) {
+    btnLockScreen.addEventListener('click', () => {
+      window.location.reload();
+    });
+  }
+
+  // Khởi tạo Bản đồ Leaflet
   const map = MapCommon.initMap('editor-map', [20.99965, 105.84280], 18);
 
   let siteData = null;
   let pois = [];
   let artifacts = [];
   let zones = [];
+
   let currentMode = 'poi'; // 'poi' | 'artifact' | 'zone'
   let selectedPoi = null;
   let selectedArtifact = null;
   let selectedZone = null;
+
+  // Trạng thái chờ click trên map để thêm mới
+  let isPlacingPoi = false;
+  let isPlacingArtifact = false;
 
   // Lớp vẽ trên bản đồ
   const poiLayerGroup = L.featureGroup().addTo(map);
@@ -26,7 +144,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let tempZonePoints = [];
   let tempZoneLine = null;
 
-  // 2. NẠP DỮ LIỆU HIỆN TẠI TỪ SERVER
+  // 3. NẠP DỮ LIỆU HIỆN TẠI TỪ SERVER
   await loadCurrentSiteData();
 
   async function loadCurrentSiteData() {
@@ -35,43 +153,45 @@ document.addEventListener('DOMContentLoaded', async () => {
       const json = await res.json();
       if (json.success && json.data) {
         siteData = json.data;
-        pois = siteData.pois || [];
-        artifacts = siteData.artifacts || [];
-        zones = siteData.zones || [];
+        pois = Array.isArray(siteData.pois) ? siteData.pois : [];
+        artifacts = Array.isArray(siteData.artifacts) ? siteData.artifacts : [];
+        zones = Array.isArray(siteData.zones) ? siteData.zones : [];
 
-        if (siteData.center) {
+        if (siteData.center && siteData.center.lat && siteData.center.lng) {
           map.setView([siteData.center.lat, siteData.center.lng], siteData.zoom || 18);
         }
 
-        populateZoneSelectDropdown();
+        populateZoneSelectDropdowns();
         renderAllOnMap();
         renderPoiList();
         renderArtifactList();
         renderZoneList();
 
-        if (pois.length > 0) selectPoi(pois[0]);
-        else if (artifacts.length > 0) selectArtifact(artifacts[0]);
+        // Mặc định không bắt buộc chọn gì để form luôn sạch sẽ
+        deselectPoi();
+        deselectArtifact();
       }
     } catch (e) {
-      console.error('Lỗi tải site data:', e);
+      console.error('[Editor] Lỗi tải site data:', e);
     }
   }
 
-  // Đổ danh sách Phân Khu vào dropdown của POI
-  function populateZoneSelectDropdown() {
-    const selZone = document.getElementById('select-poi-zone');
-    if (!selZone) return;
-    selZone.innerHTML = zones.map(z => `<option value="${z.id}">${z.name}</option>`).join('');
+  function populateZoneSelectDropdowns() {
+    const selPoiZone = document.getElementById('select-poi-zone');
+    const selArtZone = document.getElementById('select-art-zone');
+    const optionsHtml = zones.map(z => `<option value="${z.id}">${z.name}</option>`).join('');
+
+    if (selPoiZone) selPoiZone.innerHTML = optionsHtml;
+    if (selArtZone) selArtZone.innerHTML = optionsHtml;
   }
 
-  // 3. VẼ TẤT CẢ LÊN BẢN ĐỒ
   function renderAllOnMap() {
     renderPoiMarkers();
     renderArtifactMarkers();
     renderZonePolygons();
   }
 
-  // --- VẼ CÁC ĐIỂM DI TÍCH (POIs) VỚI KHẢ NĂNG KÉO THẢ (DRAGGABLE) ---
+  // --- VẼ CÁC ĐIỂM DI TÍCH (POIs) VỚI KHẢ NĂNG KÉO THẢ ---
   function renderPoiMarkers() {
     poiLayerGroup.clearLayers();
 
@@ -95,51 +215,58 @@ document.addEventListener('DOMContentLoaded', async () => {
         iconAnchor: [15, 38]
       });
 
-      // BẬT TÍNH NĂNG KÉO THẢ (DRAGGABLE = TRUE)
       const marker = L.marker([poi.lat, poi.lng], {
         icon: poiIcon,
         draggable: true
+      }).addTo(poiLayerGroup);
+
+      marker.on('click', () => {
+        if (isPlacingPoi || isPlacingArtifact) return;
+        switchMode('poi');
+        // Toggle: Bấm vào POI đang chọn thì bỏ chọn
+        if (selectedPoi && selectedPoi.id === poi.id) {
+          deselectPoi();
+        } else {
+          selectPoi(poi);
+        }
       });
 
       marker.on('dragend', (e) => {
-        const newLatLng = e.target.getLatLng();
-        poi.lat = Number(newLatLng.lat.toFixed(6));
-        poi.lng = Number(newLatLng.lng.toFixed(6));
+        const newPos = e.target.getLatLng();
+        poi.lat = parseFloat(newPos.lat.toFixed(6));
+        poi.lng = parseFloat(newPos.lng.toFixed(6));
         if (selectedPoi && selectedPoi.id === poi.id) {
-          document.getElementById('input-poi-lat').value = poi.lat;
-          document.getElementById('input-poi-lng').value = poi.lng;
+          const latEl = document.getElementById('input-poi-lat');
+          const lngEl = document.getElementById('input-poi-lng');
+          if (latEl) latEl.value = poi.lat;
+          if (lngEl) lngEl.value = poi.lng;
         }
         renderPoiList();
+        showHint(`Đã dời vị trí "${poi.name}" sang [${poi.lat}, ${poi.lng}]`);
       });
-
-      marker.on('click', () => {
-        selectPoi(poi);
-      });
-
-      poiLayerGroup.addLayer(marker);
     });
   }
 
-  // --- VẼ CÁC HIỆN VẬT LỊCH SỬ VỚI KHẢ NĂNG KÉO THẢ (DRAGGABLE) ---
+  // --- VẼ HIỆN VẬT LỊCH SỬ (ARTIFACTS) VỚI TÍNH NĂNG KÉO THẢ ---
   function renderArtifactMarkers() {
     artifactLayerGroup.clearLayers();
 
     artifacts.forEach(art => {
-      const pinHtml = `
-        <div class="artifact-pin-wrapper" title="[Hiện Vật] ${art.name}">
-          <div class="artifact-pin-badge" style="display: block;">${art.number}. ${art.name}</div>
-          <svg class="artifact-pin-svg" width="28" height="36" viewBox="0 0 28 36" fill="none">
-            <ellipse cx="14" cy="34" rx="7" ry="2" fill="rgba(0,0,0,0.4)"/>
-            <path d="M14 0C6.27 0 0 6.27 0 14C0 23 12.3 34.8 13.4 35.9C13.7 36.2 14.3 36.2 14.6 35.9C15.7 34.8 28 23 28 14C28 6.27 21.73 0 14 0Z" fill="#d97706" stroke="#ffffff" stroke-width="1.5"/>
-            <circle cx="14" cy="14" r="8" fill="#78350f"/>
-            <polygon points="14,8 19,14 14,20 9,14" fill="#fbbf24"/>
+      const iconHtml = `
+        <div class="artifact-pin-wrapper" title="${art.name}">
+          <div class="artifact-pin-badge">${art.name}</div>
+          <svg class="artifact-pin-svg" width="28" height="36" viewBox="0 0 30 38" fill="none">
+            <ellipse cx="15" cy="36" rx="8" ry="2.5" fill="rgba(0,0,0,0.35)"/>
+            <path d="M15 0C6.72 0 0 6.72 0 15C0 24.5 13.2 36.8 14.4 37.9C14.7 38.2 15.3 38.2 15.6 37.9C16.8 36.8 30 24.5 30 15C30 6.72 23.28 0 15 0Z" fill="#d97706" stroke="#ffffff" stroke-width="1.6"/>
+            <circle cx="15" cy="15" r="8" fill="#78350f"/>
+            <text x="15" y="19" font-size="10" font-weight="900" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto" text-anchor="middle" fill="#ffffff">★</text>
           </svg>
         </div>
       `;
 
       const artIcon = L.divIcon({
-        className: 'editor-art-pin',
-        html: pinHtml,
+        className: 'editor-artifact-pin',
+        html: iconHtml,
         iconSize: [28, 36],
         iconAnchor: [14, 36]
       });
@@ -147,394 +274,597 @@ document.addEventListener('DOMContentLoaded', async () => {
       const marker = L.marker([art.lat, art.lng], {
         icon: artIcon,
         draggable: true
+      }).addTo(artifactLayerGroup);
+
+      marker.on('click', () => {
+        if (isPlacingPoi || isPlacingArtifact) return;
+        switchMode('artifact');
+        // Toggle: Bấm vào hiện vật đang chọn thì bỏ chọn
+        if (selectedArtifact && selectedArtifact.id === art.id) {
+          deselectArtifact();
+        } else {
+          selectArtifact(art);
+        }
       });
 
       marker.on('dragend', (e) => {
-        const newLatLng = e.target.getLatLng();
-        art.lat = Number(newLatLng.lat.toFixed(6));
-        art.lng = Number(newLatLng.lng.toFixed(6));
+        const newPos = e.target.getLatLng();
+        art.lat = parseFloat(newPos.lat.toFixed(6));
+        art.lng = parseFloat(newPos.lng.toFixed(6));
         if (selectedArtifact && selectedArtifact.id === art.id) {
-          document.getElementById('input-art-lat').value = art.lat;
-          document.getElementById('input-art-lng').value = art.lng;
+          const latEl = document.getElementById('input-art-lat');
+          const lngEl = document.getElementById('input-art-lng');
+          if (latEl) latEl.value = art.lat;
+          if (lngEl) lngEl.value = art.lng;
         }
         renderArtifactList();
+        showHint(`Đã dời hiện vật "${art.name}" sang [${art.lat}, ${art.lng}]`);
       });
-
-      marker.on('click', () => {
-        selectArtifact(art);
-      });
-
-      artifactLayerGroup.addLayer(marker);
     });
   }
 
-  // --- VẼ CÁC VÙNG PHÂN KHU (ZONES) ---
+  // --- VẼ VÙNG PHÂN KHU (ZONES - POLYGONS) ---
   function renderZonePolygons() {
     zoneLayerGroup.clearLayers();
 
     zones.forEach(zone => {
-      const polygon = L.polygon(zone.polygon, {
-        color: zone.color || '#3b82f6',
-        weight: 2,
-        fillColor: zone.color || '#3b82f6',
-        fillOpacity: 0.18,
-        dashArray: '5, 5'
-      });
+      if (!zone.polygon || zone.polygon.length < 3) return;
 
-      polygon.bindTooltip(zone.shortName || zone.name, {
+      const poly = L.polygon(zone.polygon, {
+        color: zone.color || '#3b82f6',
+        fillColor: zone.color || '#3b82f6',
+        fillOpacity: (selectedZone && selectedZone.id === zone.id) ? 0.35 : 0.15,
+        weight: (selectedZone && selectedZone.id === zone.id) ? 3 : 1.5,
+        dashArray: '4, 4'
+      }).addTo(zoneLayerGroup);
+
+      poly.bindTooltip(zone.shortName || zone.name, {
         permanent: true,
         direction: 'center',
         className: 'zone-label-tooltip'
       });
 
-      polygon.on('click', () => {
-        selectZone(zone);
+      poly.on('click', () => {
+        if (isPlacingPoi || isPlacingArtifact) return;
+        switchMode('zone');
+        // Toggle: Bấm vào phân khu đang chọn thì bỏ chọn
+        if (selectedZone && selectedZone.id === zone.id) {
+          deselectZone();
+        } else {
+          selectZone(zone);
+        }
       });
-
-      zoneLayerGroup.addLayer(polygon);
     });
   }
 
   // 4. CHUYỂN ĐỔI CHẾ ĐỘ BIÊN TẬP
   const modeButtons = document.querySelectorAll('.mode-btn');
-  const panels = {
-    poi: document.getElementById('panel-poi'),
-    artifact: document.getElementById('panel-artifact'),
-    zone: document.getElementById('panel-zone')
-  };
-
   modeButtons.forEach(btn => {
     btn.addEventListener('click', () => {
-      modeButtons.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-
-      currentMode = btn.getAttribute('data-mode');
-      Object.keys(panels).forEach(k => {
-        if (panels[k]) {
-          panels[k].style.display = (k === currentMode) ? 'block' : 'none';
-        }
-      });
-
-      setAddingPoiMode(false);
-      setAddingArtifactMode(false);
-      cancelZoneDrawing();
-      hideHint();
+      switchMode(btn.dataset.mode);
     });
   });
 
-  // 5. XỬ LÝ SỰ KIỆN CLICK TRÊN BẢN ĐỒ THEO TỪNG CHẾ ĐỘ
-  map.on('click', (e) => {
-    const lat = Number(e.latlng.lat.toFixed(6));
-    const lng = Number(e.latlng.lng.toFixed(6));
-
-    // CHẾ ĐỘ 0: VẼ POI
-    if (currentMode === 'poi') {
-      if (isAddingPoiMode) {
-        const nextNum = pois.length > 0 ? (Math.max(...pois.map(p => p.number || 0)) + 1) : 1;
-        const defaultZone = zones.length > 0 ? zones[0] : { id: 'ZONE_A1', name: 'Khu A1' };
-        const newPoi = {
-          id: `NEU_POI_${String(nextNum).padStart(2, '0')}`,
-          number: nextNum,
-          name: `Điểm tham quan ${nextNum}`,
-          englishName: `Visiting Point ${nextNum}`,
-          zoneId: defaultZone.id,
-          zoneName: defaultZone.shortName || defaultZone.name,
-          floor: 1,
-          lat,
-          lng,
-          description: 'Mô tả tóm tắt điểm di tích...',
-          audioGuide: `Chào mừng bạn đến với điểm tham quan số ${nextNum}.`
-        };
-
-        pois.push(newPoi);
-        renderPoiMarkers();
-        renderPoiList();
-        selectPoi(newPoi);
-        setAddingPoiMode(false);
-      }
-    }
-
-    // CHẾ ĐỘ 1: VẼ HIỆN VẬT LỊCH SỬ (ARTIFACTS)
-    else if (currentMode === 'artifact') {
-      if (isAddingArtifactMode) {
-        const nextNum = artifacts.length > 0 ? (Math.max(...artifacts.map(a => a.number || 0)) + 1) : 1;
-        const newArt = {
-          id: `NEU_ART_${String(nextNum).padStart(2, '0')}`,
-          number: nextNum,
-          name: `Hiện vật số ${nextNum}`,
-          category: 'Kỷ Vật',
-          zoneId: 'ZONE_A2',
-          zoneName: 'Tòa Nhà Thế Kỷ A2',
-          year: new Date().getFullYear().toString(),
-          lat,
-          lng,
-          description: 'Mô tả tóm tắt lịch sử hiện vật...',
-          audioGuide: `Chào mừng bạn đến với hiện vật số ${nextNum}.`
-        };
-
-        artifacts.push(newArt);
-        renderArtifactMarkers();
-        renderArtifactList();
-        selectArtifact(newArt);
-        setAddingArtifactMode(false);
-      }
-    }
-
-    // CHẾ ĐỘ 2: VẼ VÙNG PHÂN KHU (POLYGON)
-    else if (currentMode === 'zone' && isDrawingZone) {
-      tempZonePoints.push([lat, lng]);
-
-      if (tempZoneLine) map.removeLayer(tempZoneLine);
-      tempZoneLine = L.polyline(tempZonePoints, { color: '#06b6d4', weight: 2, dashArray: '4, 4' }).addTo(map);
-
-      showHint(`Đã chọn ${tempZonePoints.length} đỉnh. Bấm tiếp để thêm đỉnh hoặc bấm "Khép Kín Vùng" để hoàn tất.`);
-    }
-  });
-
-  // 6.0 LOGIC BIÊN TẬP POI (CHỌN, SỬA, XÓA)
-  let isAddingPoiMode = false;
-  const btnAddPoiMode = document.getElementById('btn-add-poi-mode');
-
-  if (btnAddPoiMode) {
-    btnAddPoiMode.addEventListener('click', () => {
-      setAddingPoiMode(!isAddingPoiMode);
+  function switchMode(mode) {
+    currentMode = mode;
+    modeButtons.forEach(b => {
+      b.classList.toggle('active', b.dataset.mode === mode);
     });
+
+    const panelPoi = document.getElementById('panel-poi');
+    const panelArtifact = document.getElementById('panel-artifact');
+    const panelZone = document.getElementById('panel-zone');
+
+    if (panelPoi) panelPoi.style.display = (mode === 'poi') ? 'block' : 'none';
+    if (panelArtifact) panelArtifact.style.display = (mode === 'artifact') ? 'block' : 'none';
+    if (panelZone) panelZone.style.display = (mode === 'zone') ? 'block' : 'none';
+
+    if (mode !== 'poi' && isPlacingPoi) setPlacingPoiMode(false);
+    if (mode !== 'artifact' && isPlacingArtifact) setPlacingArtifactMode(false);
+    if (mode !== 'zone' && isDrawingZone) cancelZoneDrawing();
+
+    hideHint();
   }
 
-  function setAddingPoiMode(enable) {
-    isAddingPoiMode = enable;
-    if (!btnAddPoiMode) return;
-    if (enable) {
-      btnAddPoiMode.textContent = 'Hủy Thêm';
-      btnAddPoiMode.className = 'btn btn-secondary btn-sm';
-      showHint('Hãy bấm vào vị trí bất kỳ trên bản đồ để đặt điểm POI mới');
+  // 5. CÁC HÀM QUẢN LÝ CHẾ ĐỘ CLICK ĐẶT ĐIỂM TRÊN BẢN ĐỒ
+  function setPlacingPoiMode(active) {
+    isPlacingPoi = active;
+    if (active) {
+      if (isPlacingArtifact) setPlacingArtifactMode(false);
+      if (isDrawingZone) cancelZoneDrawing();
+      map.getContainer().style.cursor = 'crosshair';
+      if (btnAddPoiMode) {
+        btnAddPoiMode.textContent = '✕ Hủy Thêm POI';
+        btnAddPoiMode.style.background = '#475569';
+        btnAddPoiMode.style.borderColor = '#94a3b8';
+        btnAddPoiMode.style.color = '#ffffff';
+      }
+      showHint('🎯 Hãy bấm vào bất kỳ chỗ nào trên bản đồ để đặt điểm POI mới');
     } else {
-      btnAddPoiMode.textContent = '+ Thêm POI Mới';
-      btnAddPoiMode.className = 'btn btn-secondary btn-sm';
+      map.getContainer().style.cursor = '';
+      if (btnAddPoiMode) {
+        btnAddPoiMode.textContent = '+ Thêm POI Mới';
+        btnAddPoiMode.style.background = '';
+        btnAddPoiMode.style.borderColor = '#ef4444';
+        btnAddPoiMode.style.color = '#ef4444';
+      }
       hideHint();
     }
   }
 
+  function setPlacingArtifactMode(active) {
+    isPlacingArtifact = active;
+    if (active) {
+      if (isPlacingPoi) setPlacingPoiMode(false);
+      if (isDrawingZone) cancelZoneDrawing();
+      map.getContainer().style.cursor = 'crosshair';
+      if (btnAddArtifactMode) {
+        btnAddArtifactMode.textContent = '✕ Hủy Thêm Hiện Vật';
+        btnAddArtifactMode.style.background = '#475569';
+        btnAddArtifactMode.style.borderColor = '#94a3b8';
+        btnAddArtifactMode.style.color = '#ffffff';
+      }
+      showHint('🎯 Hãy bấm vào bất kỳ chỗ nào trên bản đồ để đặt Hiện vật mới');
+    } else {
+      map.getContainer().style.cursor = '';
+      if (btnAddArtifactMode) {
+        btnAddArtifactMode.textContent = '+ Thêm Hiện Vật Mới';
+        btnAddArtifactMode.style.background = '';
+        btnAddArtifactMode.style.borderColor = '#d97706';
+        btnAddArtifactMode.style.color = '#fbbf24';
+      }
+      hideHint();
+    }
+  }
+
+  // 6. XỬ LÝ CLICK TRÊN BẢN ĐỒ (CHỈ TẠO ĐIỂM KHI ĐANG BẬT CHẾ ĐỘ THÊM MỚI)
+  map.on('click', (e) => {
+    const lat = parseFloat(e.latlng.lat.toFixed(6));
+    const lng = parseFloat(e.latlng.lng.toFixed(6));
+
+    // A. ĐẶT POI MỚI TẠI VỊ TRÍ CLICK
+    if (isPlacingPoi) {
+      const nextNum = pois.length > 0 ? (Math.max(...pois.map(p => p.number || 0)) + 1) : 1;
+      const newPoi = {
+        id: `${siteData?.siteCode || 'NEU'}_POI_${String(nextNum).padStart(2, '0')}`,
+        number: nextNum,
+        name: `Điểm tham quan ${nextNum}`,
+        englishName: `Visiting Point ${nextNum}`,
+        zoneId: zones[0]?.id || 'ZONE_A1',
+        zoneName: zones[0]?.name || 'Khu A1',
+        floor: 1,
+        lat: lat,
+        lng: lng,
+        description: 'Mô tả tóm tắt điểm di tích...',
+        audioGuide: `Chào mừng bạn đến với điểm tham quan số ${nextNum}.`
+      };
+      pois.push(newPoi);
+      renderPoiMarkers();
+      renderPoiList();
+      selectPoi(newPoi);
+      setPlacingPoiMode(false);
+      showHint(`✅ Đã thêm POI #${nextNum} tại vị trí [${lat}, ${lng}]!`);
+      return;
+    }
+
+    // B. ĐẶT HIỆN VẬT MỚI TẠI VỊ TRÍ CLICK
+    if (isPlacingArtifact) {
+      const nextNum = artifacts.length > 0 ? (Math.max(...artifacts.map(a => a.number || 0)) + 1) : 1;
+      const newArt = {
+        id: `${siteData?.siteCode || 'NEU'}_ART_${String(nextNum).padStart(2, '0')}`,
+        number: nextNum,
+        name: `Hiện vật số ${nextNum}`,
+        category: 'Kỷ Vật',
+        zoneId: zones[0]?.id || 'ZONE_A2',
+        zoneName: zones[0]?.name || 'Tòa Nhà Thế Kỷ A2',
+        year: '2026',
+        lat: lat,
+        lng: lng,
+        description: 'Mô tả tóm tắt lịch sử hiện vật...',
+        audioGuide: `Chào mừng bạn đến với hiện vật số ${nextNum}.`
+      };
+      artifacts.push(newArt);
+      renderArtifactMarkers();
+      renderArtifactList();
+      selectArtifact(newArt);
+      setPlacingArtifactMode(false);
+      showHint(`✅ Đã thêm Hiện vật #${nextNum} tại vị trí [${lat}, ${lng}]!`);
+      return;
+    }
+
+    // C. VẼ VÙNG PHÂN KHU (ZONE POLYGON)
+    if (currentMode === 'zone' && isDrawingZone) {
+      tempZonePoints.push([lat, lng]);
+      if (tempZoneLine) map.removeLayer(tempZoneLine);
+      tempZoneLine = L.polyline(tempZonePoints, { color: '#3b82f6', weight: 2, dashArray: '3, 3' }).addTo(map);
+      showHint(`Đã thêm đỉnh thứ ${tempZonePoints.length}. Bấm tiếp hoặc bấm "Khép Kín Vùng".`);
+      return;
+    }
+
+    // KHI CLICK BÌNH THƯỜNG TRÊN MAP: KHÔNG LÀM GÌ CẢ!
+    // Tuyệt đối không thay đổi tọa độ của POI hay Hiện vật, để người dùng tự do kéo rê và zoom bản đồ!
+  });
+
+  // 7. THAO TÁC ĐIỂM THAM QUAN (POIs)
   function selectPoi(poi) {
     selectedPoi = poi;
-    document.getElementById('input-poi-number').value = poi.number || 1;
-    document.getElementById('input-poi-name').value = poi.name || '';
-    document.getElementById('input-poi-eng').value = poi.englishName || '';
-    document.getElementById('select-poi-zone').value = poi.zoneId || '';
-    document.getElementById('input-poi-floor').value = poi.floor || 1;
-    document.getElementById('input-poi-lat').value = poi.lat || '';
-    document.getElementById('input-poi-lng').value = poi.lng || '';
-    document.getElementById('input-poi-desc').value = poi.description || '';
-    document.getElementById('input-poi-audio').value = poi.audioGuide || '';
+    if (!poi) return;
 
-    document.querySelectorAll('.poi-item-row').forEach(r => r.classList.remove('selected'));
-    const targetRow = document.getElementById(`poi-row-${poi.id}`);
-    if (targetRow) targetRow.classList.add('selected');
+    const numEl = document.getElementById('input-poi-number');
+    const nameEl = document.getElementById('input-poi-name');
+    const engEl = document.getElementById('input-poi-eng');
+    const zoneEl = document.getElementById('select-poi-zone');
+    const floorEl = document.getElementById('input-poi-floor');
+    const latEl = document.getElementById('input-poi-lat');
+    const lngEl = document.getElementById('input-poi-lng');
+    const descEl = document.getElementById('input-poi-desc');
+    const audioEl = document.getElementById('input-poi-audio');
 
-    map.panTo([poi.lat, poi.lng]);
+    if (numEl) numEl.value = poi.number ?? 1;
+    if (nameEl) nameEl.value = poi.name || '';
+    if (engEl) engEl.value = poi.englishName || poi.nameEn || '';
+    if (zoneEl) zoneEl.value = poi.zoneId || '';
+    if (floorEl) floorEl.value = poi.floor || 1;
+    if (latEl) latEl.value = poi.lat ?? '';
+    if (lngEl) lngEl.value = poi.lng ?? '';
+    if (descEl) descEl.value = poi.description || '';
+    if (audioEl) audioEl.value = poi.audioGuide || '';
+
+    document.querySelectorAll('#list-all-pois .edit-item-row').forEach(row => {
+      row.classList.toggle('selected', row.dataset.id === poi.id);
+    });
   }
 
-  // Cập nhật POI
+  function deselectPoi() {
+    selectedPoi = null;
+    const numEl = document.getElementById('input-poi-number');
+    const nameEl = document.getElementById('input-poi-name');
+    const engEl = document.getElementById('input-poi-eng');
+    const zoneEl = document.getElementById('select-poi-zone');
+    const floorEl = document.getElementById('input-poi-floor');
+    const latEl = document.getElementById('input-poi-lat');
+    const lngEl = document.getElementById('input-poi-lng');
+    const descEl = document.getElementById('input-poi-desc');
+    const audioEl = document.getElementById('input-poi-audio');
+
+    if (numEl) numEl.value = '';
+    if (nameEl) nameEl.value = '';
+    if (engEl) engEl.value = '';
+    if (zoneEl) zoneEl.value = '';
+    if (floorEl) floorEl.value = '1';
+    if (latEl) latEl.value = '';
+    if (lngEl) lngEl.value = '';
+    if (descEl) descEl.value = '';
+    if (audioEl) audioEl.value = '';
+
+    document.querySelectorAll('#list-all-pois .edit-item-row').forEach(row => {
+      row.classList.remove('selected');
+    });
+    showHint('Đã bỏ chọn POI.');
+  }
+
+  const btnAddPoiMode = document.getElementById('btn-add-poi-mode');
+  if (btnAddPoiMode) {
+    btnAddPoiMode.addEventListener('click', () => {
+      setPlacingPoiMode(!isPlacingPoi);
+    });
+  }
+
   const btnUpdatePoi = document.getElementById('btn-update-poi');
   if (btnUpdatePoi) {
     btnUpdatePoi.addEventListener('click', () => {
       if (!selectedPoi) {
-        alert('Vui lòng chọn một POI trước khi cập nhật!');
+        alert('Vui lòng chọn một điểm POI trước khi cập nhật!');
         return;
       }
-      selectedPoi.number = parseInt(document.getElementById('input-poi-number').value) || selectedPoi.number;
-      selectedPoi.name = document.getElementById('input-poi-name').value.trim() || selectedPoi.name;
-      selectedPoi.englishName = document.getElementById('input-poi-eng').value.trim() || selectedPoi.englishName;
-      selectedPoi.zoneId = document.getElementById('select-poi-zone').value;
-      const targetZone = zones.find(z => z.id === selectedPoi.zoneId);
-      selectedPoi.zoneName = targetZone ? (targetZone.shortName || targetZone.name) : selectedPoi.zoneName;
-      selectedPoi.floor = parseInt(document.getElementById('input-poi-floor').value) || 1;
-      selectedPoi.lat = parseFloat(document.getElementById('input-poi-lat').value) || selectedPoi.lat;
-      selectedPoi.lng = parseFloat(document.getElementById('input-poi-lng').value) || selectedPoi.lng;
-      selectedPoi.description = document.getElementById('input-poi-desc').value.trim();
-      selectedPoi.audioGuide = document.getElementById('input-poi-audio').value.trim();
+      const numEl = document.getElementById('input-poi-number');
+      const nameEl = document.getElementById('input-poi-name');
+      const engEl = document.getElementById('input-poi-eng');
+      const zoneEl = document.getElementById('select-poi-zone');
+      const floorEl = document.getElementById('input-poi-floor');
+      const latEl = document.getElementById('input-poi-lat');
+      const lngEl = document.getElementById('input-poi-lng');
+      const descEl = document.getElementById('input-poi-desc');
+      const audioEl = document.getElementById('input-poi-audio');
+
+      if (numEl) selectedPoi.number = parseInt(numEl.value, 10) || selectedPoi.number;
+      if (nameEl) selectedPoi.name = nameEl.value.trim() || selectedPoi.name;
+      if (engEl) selectedPoi.englishName = engEl.value.trim();
+      if (zoneEl) {
+        selectedPoi.zoneId = zoneEl.value;
+        const matchedZone = zones.find(z => z.id === zoneEl.value);
+        if (matchedZone) selectedPoi.zoneName = matchedZone.name;
+      }
+      if (floorEl) selectedPoi.floor = parseInt(floorEl.value, 10) || 1;
+      if (latEl && !isNaN(parseFloat(latEl.value))) selectedPoi.lat = parseFloat(latEl.value);
+      if (lngEl && !isNaN(parseFloat(lngEl.value))) selectedPoi.lng = parseFloat(lngEl.value);
+      if (descEl) selectedPoi.description = descEl.value.trim();
+      if (audioEl) selectedPoi.audioGuide = audioEl.value.trim();
 
       renderPoiMarkers();
       renderPoiList();
-      alert(`Đã cập nhật POI: "${selectedPoi.name}"!`);
+      showHint(`Đã cập nhật POI: ${selectedPoi.name}`);
     });
   }
 
-  // Xóa POI
   const btnDeletePoi = document.getElementById('btn-delete-poi');
   if (btnDeletePoi) {
     btnDeletePoi.addEventListener('click', () => {
       if (!selectedPoi) return;
       if (confirm(`Bạn có chắc chắn muốn xóa điểm POI "${selectedPoi.name}"?`)) {
         pois = pois.filter(p => p.id !== selectedPoi.id);
-        selectedPoi = null;
+        deselectPoi();
         renderPoiMarkers();
         renderPoiList();
-        if (pois.length > 0) selectPoi(pois[0]);
+        showHint('Đã xóa điểm POI.');
       }
     });
   }
 
   function renderPoiList() {
     const listEl = document.getElementById('list-all-pois');
+    const countEl = document.getElementById('count-poi-display');
+    if (countEl) countEl.textContent = pois.length;
     if (!listEl) return;
-    document.getElementById('count-poi-display').textContent = pois.length;
 
     listEl.innerHTML = pois.map(p => `
-      <div id="poi-row-${p.id}" class="edit-item-row poi-item-row ${selectedPoi && selectedPoi.id === p.id ? 'selected' : ''}" onclick="window.selectPoiById('${p.id}')">
+      <div class="edit-item-row ${selectedPoi && selectedPoi.id === p.id ? 'selected' : ''}" data-id="${p.id}" onclick="selectPoiById('${p.id}')">
         <div>
-          <strong style="color: #ef4444;">${p.number}.</strong>
-          <span>${p.name}</span>
+          <strong style="color: #ef4444;">${p.number}.</strong> ${p.name}
         </div>
         <div style="font-size: 0.68rem; color: var(--text-dim);">
-          ${p.lat}, ${p.lng}
+          [${p.lat}, ${p.lng}]
         </div>
       </div>
     `).join('');
   }
 
   window.selectPoiById = (id) => {
+    // Bấm vào POI đang chọn -> HỦY CHỌN (Toggle Deselect)
+    if (selectedPoi && selectedPoi.id === id) {
+      deselectPoi();
+      return;
+    }
     const p = pois.find(x => x.id === id);
-    if (p) selectPoi(p);
+    if (p) {
+      selectPoi(p);
+      map.setView([p.lat, p.lng], 19);
+    }
   };
 
-  // 6.1 LOGIC BIÊN TẬP HIỆN VẬT LỊCH SỬ (ARTIFACTS: CHỌN, SỬA, XÓA)
-  let isAddingArtifactMode = false;
-  const btnAddArtifactMode = document.getElementById('btn-add-artifact-mode');
+  // 8. THAO TÁC HIỆN VẬT LỊCH SỬ (ARTIFACTS)
+  function selectArtifact(art) {
+    selectedArtifact = art;
+    if (!art) return;
 
-  if (btnAddArtifactMode) {
-    btnAddArtifactMode.addEventListener('click', () => {
-      setAddingArtifactMode(!isAddingArtifactMode);
+    const numEl = document.getElementById('input-art-number');
+    const nameEl = document.getElementById('input-art-name');
+    const catEl = document.getElementById('input-art-category');
+    const yearEl = document.getElementById('input-art-year');
+    const zoneEl = document.getElementById('select-art-zone');
+    const latEl = document.getElementById('input-art-lat');
+    const lngEl = document.getElementById('input-art-lng');
+    const descEl = document.getElementById('input-art-desc');
+    const audioEl = document.getElementById('input-art-audio');
+
+    if (numEl) numEl.value = art.number ?? 1;
+    if (nameEl) nameEl.value = art.name || '';
+    if (catEl) catEl.value = art.category || '';
+    if (yearEl) yearEl.value = art.year || '';
+    if (zoneEl) zoneEl.value = art.zoneId || '';
+    if (latEl) latEl.value = art.lat ?? '';
+    if (lngEl) lngEl.value = art.lng ?? '';
+    if (descEl) descEl.value = art.description || '';
+    if (audioEl) audioEl.value = art.audioGuide || '';
+
+    document.querySelectorAll('#list-all-artifacts .edit-item-row').forEach(row => {
+      row.classList.toggle('selected', row.dataset.id === art.id);
     });
   }
 
-  function setAddingArtifactMode(enable) {
-    isAddingArtifactMode = enable;
-    if (!btnAddArtifactMode) return;
-    if (enable) {
-      btnAddArtifactMode.textContent = 'Hủy Thêm';
-      btnAddArtifactMode.className = 'btn btn-secondary btn-sm';
-      showHint('Hãy bấm vào vị trí bất kỳ trên bản đồ để đặt hiện vật mới');
-    } else {
-      btnAddArtifactMode.textContent = '+ Thêm Hiện Vật Mới';
-      btnAddArtifactMode.className = 'btn btn-secondary btn-sm';
-      hideHint();
-    }
+  function deselectArtifact() {
+    selectedArtifact = null;
+    const numEl = document.getElementById('input-art-number');
+    const nameEl = document.getElementById('input-art-name');
+    const catEl = document.getElementById('input-art-category');
+    const yearEl = document.getElementById('input-art-year');
+    const zoneEl = document.getElementById('select-art-zone');
+    const latEl = document.getElementById('input-art-lat');
+    const lngEl = document.getElementById('input-art-lng');
+    const descEl = document.getElementById('input-art-desc');
+    const audioEl = document.getElementById('input-art-audio');
+
+    if (numEl) numEl.value = '';
+    if (nameEl) nameEl.value = '';
+    if (catEl) catEl.value = '';
+    if (yearEl) yearEl.value = '';
+    if (zoneEl) zoneEl.value = '';
+    if (latEl) latEl.value = '';
+    if (lngEl) lngEl.value = '';
+    if (descEl) descEl.value = '';
+    if (audioEl) audioEl.value = '';
+
+    document.querySelectorAll('#list-all-artifacts .edit-item-row').forEach(row => {
+      row.classList.remove('selected');
+    });
+    showHint('Đã bỏ chọn hiện vật.');
   }
 
-  function selectArtifact(art) {
-    selectedArtifact = art;
-    document.getElementById('input-art-number').value = art.number || 1;
-    document.getElementById('input-art-name').value = art.name || '';
-    document.getElementById('input-art-category').value = art.category || '';
-    document.getElementById('input-art-year').value = art.year || '';
-    document.getElementById('input-art-lat').value = art.lat || '';
-    document.getElementById('input-art-lng').value = art.lng || '';
-    document.getElementById('input-art-desc').value = art.description || '';
-    document.getElementById('input-art-audio').value = art.audioGuide || '';
-
-    document.querySelectorAll('.art-item-row').forEach(r => r.classList.remove('selected'));
-    const targetRow = document.getElementById(`art-row-${art.id}`);
-    if (targetRow) targetRow.classList.add('selected');
-
-    map.panTo([art.lat, art.lng]);
+  const btnAddArtifactMode = document.getElementById('btn-add-artifact-mode');
+  if (btnAddArtifactMode) {
+    btnAddArtifactMode.addEventListener('click', () => {
+      setPlacingArtifactMode(!isPlacingArtifact);
+    });
   }
 
-  // Cập nhật Hiện Vật
-  document.getElementById('btn-update-artifact').addEventListener('click', () => {
-    if (!selectedArtifact) {
-      alert('Vui lòng chọn một hiện vật trước khi cập nhật!');
-      return;
-    }
-    selectedArtifact.number = parseInt(document.getElementById('input-art-number').value) || selectedArtifact.number;
-    selectedArtifact.name = document.getElementById('input-art-name').value.trim() || selectedArtifact.name;
-    selectedArtifact.category = document.getElementById('input-art-category').value.trim() || selectedArtifact.category;
-    selectedArtifact.year = document.getElementById('input-art-year').value.trim() || selectedArtifact.year;
-    selectedArtifact.lat = parseFloat(document.getElementById('input-art-lat').value) || selectedArtifact.lat;
-    selectedArtifact.lng = parseFloat(document.getElementById('input-art-lng').value) || selectedArtifact.lng;
-    selectedArtifact.description = document.getElementById('input-art-desc').value.trim();
-    selectedArtifact.audioGuide = document.getElementById('input-art-audio').value.trim();
+  const btnUpdateArtifact = document.getElementById('btn-update-artifact');
+  if (btnUpdateArtifact) {
+    btnUpdateArtifact.addEventListener('click', () => {
+      if (!selectedArtifact) {
+        alert('Vui lòng chọn một hiện vật trước khi cập nhật!');
+        return;
+      }
+      const numEl = document.getElementById('input-art-number');
+      const nameEl = document.getElementById('input-art-name');
+      const catEl = document.getElementById('input-art-category');
+      const yearEl = document.getElementById('input-art-year');
+      const zoneEl = document.getElementById('select-art-zone');
+      const latEl = document.getElementById('input-art-lat');
+      const lngEl = document.getElementById('input-art-lng');
+      const descEl = document.getElementById('input-art-desc');
+      const audioEl = document.getElementById('input-art-audio');
 
-    renderArtifactMarkers();
-    renderArtifactList();
-    alert(`Đã cập nhật hiện vật: "${selectedArtifact.name}"!`);
-  });
+      if (numEl) selectedArtifact.number = parseInt(numEl.value, 10) || selectedArtifact.number;
+      if (nameEl) selectedArtifact.name = nameEl.value.trim() || selectedArtifact.name;
+      if (catEl) selectedArtifact.category = catEl.value.trim();
+      if (yearEl) selectedArtifact.year = yearEl.value.trim();
+      if (zoneEl) {
+        selectedArtifact.zoneId = zoneEl.value;
+        const matchedZone = zones.find(z => z.id === zoneEl.value);
+        if (matchedZone) selectedArtifact.zoneName = matchedZone.name;
+      }
+      if (latEl && !isNaN(parseFloat(latEl.value))) selectedArtifact.lat = parseFloat(latEl.value);
+      if (lngEl && !isNaN(parseFloat(lngEl.value))) selectedArtifact.lng = parseFloat(lngEl.value);
+      if (descEl) selectedArtifact.description = descEl.value.trim();
+      if (audioEl) selectedArtifact.audioGuide = audioEl.value.trim();
 
-  // Xóa Hiện Vật
-  document.getElementById('btn-delete-artifact').addEventListener('click', () => {
-    if (!selectedArtifact) return;
-    if (confirm(`Bạn có chắc chắn muốn xóa hiện vật "${selectedArtifact.name}"?`)) {
-      artifacts = artifacts.filter(a => a.id !== selectedArtifact.id);
-      selectedArtifact = null;
       renderArtifactMarkers();
       renderArtifactList();
-      if (artifacts.length > 0) selectArtifact(artifacts[0]);
-    }
-  });
+      showHint(`Đã cập nhật hiện vật: ${selectedArtifact.name}`);
+    });
+  }
+
+  const btnDeleteArtifact = document.getElementById('btn-delete-artifact');
+  if (btnDeleteArtifact) {
+    btnDeleteArtifact.addEventListener('click', () => {
+      if (!selectedArtifact) return;
+      if (confirm(`Bạn có chắc chắn muốn xóa hiện vật "${selectedArtifact.name}"?`)) {
+        artifacts = artifacts.filter(a => a.id !== selectedArtifact.id);
+        deselectArtifact();
+        renderArtifactMarkers();
+        renderArtifactList();
+        showHint('Đã xóa hiện vật.');
+      }
+    });
+  }
 
   function renderArtifactList() {
     const listEl = document.getElementById('list-all-artifacts');
-    document.getElementById('count-artifact-display').textContent = artifacts.length;
+    const countEl = document.getElementById('count-artifact-display');
+    if (countEl) countEl.textContent = artifacts.length;
+    if (!listEl) return;
 
     listEl.innerHTML = artifacts.map(a => `
-      <div id="art-row-${a.id}" class="edit-item-row art-item-row ${selectedArtifact && selectedArtifact.id === a.id ? 'selected' : ''}" onclick="window.selectArtById('${a.id}')">
+      <div class="edit-item-row ${selectedArtifact && selectedArtifact.id === a.id ? 'selected' : ''}" data-id="${a.id}" onclick="selectArtifactById('${a.id}')">
         <div>
-          <strong style="color: #fbbf24;">${a.number}.</strong>
-          <span>${a.name}</span>
+          <strong style="color: #fbbf24;">★</strong> ${a.name} (${a.category || 'Hiện vật'})
         </div>
         <div style="font-size: 0.68rem; color: var(--text-dim);">
-          ${a.lat}, ${a.lng}
+          [${a.lat}, ${a.lng}]
         </div>
       </div>
     `).join('');
   }
 
-  window.selectArtById = (id) => {
-    const a = artifacts.find(x => x.id === id);
-    if (a) selectArtifact(a);
-  };
-
-  // 7. LOGIC BIÊN TẬP VÙNG PHÂN KHU (ZONES)
-  const btnStartZone = document.getElementById('btn-start-zone-draw');
-  const btnFinishZone = document.getElementById('btn-finish-zone-draw');
-  const btnCancelZone = document.getElementById('btn-cancel-zone-draw');
-
-  btnStartZone.addEventListener('click', () => {
-    isDrawingZone = true;
-    tempZonePoints = [];
-    if (tempZoneLine) map.removeLayer(tempZoneLine);
-    showHint('Bấm các điểm trên bản đồ để xác định ranh giới vùng. Khi xong bấm "Khép Kín Vùng".');
-  });
-
-  btnFinishZone.addEventListener('click', () => {
-    if (tempZonePoints.length < 3) {
-      alert('Vùng phân khu cần ít nhất 3 điểm tọa độ để tạo thành đa giác khép kín!');
+  window.selectArtifactById = (id) => {
+    // Bấm vào hiện vật đang chọn -> HỦY CHỌN (Toggle Deselect)
+    if (selectedArtifact && selectedArtifact.id === id) {
+      deselectArtifact();
       return;
     }
+    const a = artifacts.find(x => x.id === id);
+    if (a) {
+      selectArtifact(a);
+      map.setView([a.lat, a.lng], 19);
+    }
+  };
 
-    const nextId = `ZONE_${Date.now()}`;
-    const newZone = {
-      id: nextId,
-      name: document.getElementById('input-zone-name').value.trim() || `Phân Khu Mới ${zones.length + 1}`,
-      shortName: document.getElementById('input-zone-short').value.trim() || `Khu ${zones.length + 1}`,
-      color: document.getElementById('input-zone-color').value || '#3b82f6',
-      floor: parseInt(document.getElementById('select-zone-floor').value) || 1,
-      polygon: [...tempZonePoints]
-    };
+  // 9. THAO TÁC VÙNG PHÂN KHU (ZONES)
+  function selectZone(zone) {
+    selectedZone = zone;
+    if (!zone) return;
 
-    zones.push(newZone);
-    populateZoneSelectDropdown();
+    const nameEl = document.getElementById('input-zone-name');
+    const shortEl = document.getElementById('input-zone-short');
+    const colorEl = document.getElementById('input-zone-color');
+    const floorEl = document.getElementById('select-zone-floor');
+
+    if (nameEl) nameEl.value = zone.name || '';
+    if (shortEl) shortEl.value = zone.shortName || '';
+    if (colorEl) colorEl.value = zone.color || '#3b82f6';
+    if (floorEl) floorEl.value = zone.floor || 1;
+
+    document.querySelectorAll('#list-all-zones .edit-item-row').forEach(row => {
+      row.classList.toggle('selected', row.dataset.id === zone.id);
+    });
+
     renderZonePolygons();
-    renderZoneList();
-    selectZone(newZone);
+  }
 
-    cancelZoneDrawing();
-    alert(`Đã tạo vùng phân khu: "${newZone.name}"!`);
-  });
+  function deselectZone() {
+    selectedZone = null;
+    const nameEl = document.getElementById('input-zone-name');
+    const shortEl = document.getElementById('input-zone-short');
+    const colorEl = document.getElementById('input-zone-color');
+    const floorEl = document.getElementById('select-zone-floor');
 
-  btnCancelZone.addEventListener('click', () => {
-    cancelZoneDrawing();
-  });
+    if (nameEl) nameEl.value = '';
+    if (shortEl) shortEl.value = '';
+    if (colorEl) colorEl.value = '#3b82f6';
+    if (floorEl) floorEl.value = '1';
+
+    document.querySelectorAll('#list-all-zones .edit-item-row').forEach(row => {
+      row.classList.remove('selected');
+    });
+    renderZonePolygons();
+    showHint('Đã bỏ chọn phân khu.');
+  }
+
+  const btnStartZoneDraw = document.getElementById('btn-start-zone-draw');
+  if (btnStartZoneDraw) {
+    btnStartZoneDraw.addEventListener('click', () => {
+      isDrawingZone = true;
+      tempZonePoints = [];
+      if (tempZoneLine) map.removeLayer(tempZoneLine);
+      tempZoneLine = null;
+      showHint('Bắt đầu vẽ vùng: Bấm các điểm trên bản đồ để tạo đa giác ranh giới.');
+    });
+  }
+
+  const btnFinishZoneDraw = document.getElementById('btn-finish-zone-draw');
+  if (btnFinishZoneDraw) {
+    btnFinishZoneDraw.addEventListener('click', () => {
+      if (tempZonePoints.length < 3) {
+        alert('Một vùng phân khu cần ít nhất 3 đỉnh để khép kín!');
+        return;
+      }
+
+      const nameEl = document.getElementById('input-zone-name');
+      const shortEl = document.getElementById('input-zone-short');
+      const colorEl = document.getElementById('input-zone-color');
+      const floorEl = document.getElementById('select-zone-floor');
+
+      const newZone = {
+        id: `ZONE_${Date.now()}`,
+        name: (nameEl ? nameEl.value.trim() : '') || `Phân Khu Mới ${zones.length + 1}`,
+        shortName: (shortEl ? shortEl.value.trim() : '') || `Khu ${zones.length + 1}`,
+        color: (colorEl ? colorEl.value : '') || '#3b82f6',
+        floor: parseInt(floorEl ? floorEl.value : 1, 10) || 1,
+        polygon: [...tempZonePoints]
+      };
+
+      zones.push(newZone);
+      cancelZoneDrawing();
+      populateZoneSelectDropdowns();
+      renderZonePolygons();
+      renderZoneList();
+      selectZone(newZone);
+      showHint(`Đã tạo thành công phân khu "${newZone.name}"!`);
+    });
+  }
+
+  const btnCancelZoneDraw = document.getElementById('btn-cancel-zone-draw');
+  if (btnCancelZoneDraw) btnCancelZoneDraw.addEventListener('click', cancelZoneDrawing);
 
   function cancelZoneDrawing() {
     isDrawingZone = false;
@@ -546,57 +876,53 @@ document.addEventListener('DOMContentLoaded', async () => {
     hideHint();
   }
 
-  function selectZone(zone) {
-    selectedZone = zone;
-    document.getElementById('input-zone-name').value = zone.name || '';
-    document.getElementById('input-zone-short').value = zone.shortName || '';
-    document.getElementById('input-zone-color').value = zone.color || '#3b82f6';
-    document.getElementById('select-zone-floor').value = zone.floor || 1;
+  const btnUpdateZone = document.getElementById('btn-update-zone');
+  if (btnUpdateZone) {
+    btnUpdateZone.addEventListener('click', () => {
+      if (!selectedZone) {
+        alert('Vui lòng chọn một phân khu trước khi cập nhật!');
+        return;
+      }
+      const nameEl = document.getElementById('input-zone-name');
+      const shortEl = document.getElementById('input-zone-short');
+      const colorEl = document.getElementById('input-zone-color');
+      const floorEl = document.getElementById('select-zone-floor');
 
-    document.querySelectorAll('.zone-item-row').forEach(r => r.classList.remove('selected'));
-    const targetRow = document.getElementById(`zone-row-${zone.id}`);
-    if (targetRow) targetRow.classList.add('selected');
+      if (nameEl) selectedZone.name = nameEl.value.trim();
+      if (shortEl) selectedZone.shortName = shortEl.value.trim();
+      if (colorEl) selectedZone.color = colorEl.value;
+      if (floorEl) selectedZone.floor = parseInt(floorEl.value, 10) || 1;
 
-    if (zone.polygon && zone.polygon.length > 0) {
-      map.fitBounds(L.polygon(zone.polygon).getBounds().pad(0.3));
-    }
-  }
-
-  // Cập nhật Zone
-  document.getElementById('btn-update-zone').addEventListener('click', () => {
-    if (!selectedZone) {
-      alert('Vui lòng chọn một vùng trước khi cập nhật!');
-      return;
-    }
-    selectedZone.name = document.getElementById('input-zone-name').value.trim() || selectedZone.name;
-    selectedZone.shortName = document.getElementById('input-zone-short').value.trim() || selectedZone.shortName;
-    selectedZone.color = document.getElementById('input-zone-color').value || selectedZone.color;
-    selectedZone.floor = parseInt(document.getElementById('select-zone-floor').value) || 1;
-
-    populateZoneSelectDropdown();
-    renderZonePolygons();
-    renderZoneList();
-    alert(`Đã cập nhật phân khu "${selectedZone.name}"!`);
-  });
-
-  // Xóa Zone
-  document.getElementById('btn-delete-zone').addEventListener('click', () => {
-    if (!selectedZone) return;
-    if (confirm(`Bạn có chắc chắn muốn xóa phân khu "${selectedZone.name}"?`)) {
-      zones = zones.filter(z => z.id !== selectedZone.id);
-      selectedZone = null;
-      populateZoneSelectDropdown();
+      populateZoneSelectDropdowns();
       renderZonePolygons();
       renderZoneList();
-    }
-  });
+      showHint(`Đã cập nhật phân khu: ${selectedZone.name}`);
+    });
+  }
+
+  const btnDeleteZone = document.getElementById('btn-delete-zone');
+  if (btnDeleteZone) {
+    btnDeleteZone.addEventListener('click', () => {
+      if (!selectedZone) return;
+      if (confirm(`Bạn có chắc chắn muốn xóa phân khu "${selectedZone.name}"?`)) {
+        zones = zones.filter(z => z.id !== selectedZone.id);
+        deselectZone();
+        populateZoneSelectDropdowns();
+        renderZonePolygons();
+        renderZoneList();
+        showHint('Đã xóa phân khu.');
+      }
+    });
+  }
 
   function renderZoneList() {
     const listEl = document.getElementById('list-all-zones');
-    document.getElementById('count-zone-display').textContent = zones.length;
+    const countEl = document.getElementById('count-zone-display');
+    if (countEl) countEl.textContent = zones.length;
+    if (!listEl) return;
 
     listEl.innerHTML = zones.map(z => `
-      <div id="zone-row-${z.id}" class="edit-item-row zone-item-row ${selectedZone && selectedZone.id === z.id ? 'selected' : ''}" onclick="window.selectZoneById('${z.id}')">
+      <div class="edit-item-row ${selectedZone && selectedZone.id === z.id ? 'selected' : ''}" data-id="${z.id}" onclick="selectZoneById('${z.id}')">
         <div>
           <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: ${z.color}; margin-right: 6px;"></span>
           <strong>${z.shortName || z.name}</strong>
@@ -609,212 +935,124 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   window.selectZoneById = (id) => {
+    // Bấm vào phân khu đang chọn -> HỦY CHỌN
+    if (selectedZone && selectedZone.id === id) {
+      deselectZone();
+      return;
+    }
     const z = zones.find(x => x.id === id);
-    if (z) selectZone(z);
+    if (z) {
+      selectZone(z);
+      if (z.polygon && z.polygon.length > 0) {
+        const bounds = L.latLngBounds(z.polygon);
+        map.fitBounds(bounds, { padding: [40, 40] });
+      }
+    }
   };
 
-  // 8. LƯU VÀO HỆ THỐNG & XUẤT FILE JSON
+  // 10. LƯU VÀO HỆ THỐNG & XUẤT FILE JSON
   const btnSaveServer = document.getElementById('btn-save-server');
   const btnExportJson = document.getElementById('btn-export-json');
   const btnResetDefault = document.getElementById('btn-reset-default');
 
-  // --- XÁC THỰC MÃ BÍ MẬT MAP STUDIO (MỖI LẦN VÀO PHẢI NHẬP KEY) ---
-  function getCookie(name) {
-    const match = document.cookie.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'));
-    return match ? decodeURIComponent(match[1]) : '';
-  }
+  if (btnSaveServer) {
+    btnSaveServer.addEventListener('click', async () => {
+      btnSaveServer.disabled = true;
+      btnSaveServer.textContent = 'Đang lưu...';
 
-  let sessionEditorKey = getCookie('editor_session_key') || '';
-  const getEditorKey = () => sessionEditorKey;
+      const payload = {
+        siteCode: siteData?.siteCode || 'NEU',
+        siteName: siteData?.siteName || 'Trường Đại Học Kinh Tế Quốc Dân (NEU)',
+        englishName: siteData?.englishName || 'National Economics University Campus',
+        locationName: siteData?.locationName || '207 Đường Giải Phóng, Hà Nội',
+        center: siteData?.center || { lat: 20.99965, lng: 105.84280 },
+        zoom: siteData?.zoom || 18,
+        zones: zones,
+        pois: pois,
+        artifacts: artifacts,
+        tourRoute: []
+      };
 
-  const authOverlay = document.getElementById('editor-auth-lock-overlay');
-  const inputKey = document.getElementById('input-editor-auth-key');
-  const btnSubmitAuth = document.getElementById('btn-submit-editor-auth');
-  const authErrorMsg = document.getElementById('editor-auth-error-msg');
-  const btnToggleVis = document.getElementById('btn-toggle-editor-key-vis');
-  const btnLockScreen = document.getElementById('btn-editor-lock-screen');
-
-  if (btnToggleVis && inputKey) {
-    let isShowing = false;
-    btnToggleVis.addEventListener('click', () => {
-      isShowing = !isShowing;
-      inputKey.type = isShowing ? 'text' : 'password';
-      inputKey.classList.toggle('is-password', !isShowing);
-      const svg = document.getElementById('editor-svg-eye');
-      if (svg) {
-        svg.innerHTML = isShowing
-          ? '<path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/>'
-          : '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>';
-      }
-    });
-  }
-
-  function showLockScreen() {
-    sessionEditorKey = '';
-    document.cookie = 'editor_session_key=; Path=/; Max-Age=0';
-    if (authOverlay) authOverlay.style.display = 'flex';
-    if (btnLockScreen) btnLockScreen.style.display = 'none';
-    if (inputKey) {
-      inputKey.value = '';
-      setTimeout(() => inputKey.focus(), 150);
-    }
-    if (authErrorMsg) authErrorMsg.style.display = 'none';
-  }
-
-  if (btnLockScreen) {
-    btnLockScreen.addEventListener('click', showLockScreen);
-  }
-
-  async function handleEditorAuthSubmit() {
-    const entered = (inputKey ? inputKey.value : '').trim();
-    if (!entered) {
-      if (authErrorMsg) {
-        authErrorMsg.textContent = 'Vui lòng nhập mã bí mật Map Studio!';
-        authErrorMsg.style.display = 'block';
-      }
-      return;
-    }
-
-    if (btnSubmitAuth) {
-      btnSubmitAuth.disabled = true;
-      btnSubmitAuth.textContent = 'Đang xác thực...';
-    }
-
-    try {
-      const res = await fetch('/api/editor/verify-key', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ editorKey: entered, key: entered })
-      });
-      const data = await res.json();
-      if (data.success) {
-        sessionEditorKey = entered;
-        if (authOverlay) authOverlay.style.display = 'none';
-        if (btnLockScreen) btnLockScreen.style.display = 'inline-flex';
-        if (authErrorMsg) authErrorMsg.style.display = 'none';
-      } else {
-        if (authErrorMsg) {
-          authErrorMsg.textContent = data.error || 'Mã bí mật Map Studio không chính xác!';
-          authErrorMsg.style.display = 'block';
+      try {
+        const res = await fetch('/api/editor/save', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Editor-Secret': getEditorKey()
+          },
+          body: JSON.stringify({ ...payload, editorKey: getEditorKey() })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('Đã lưu thành công dữ liệu bản đồ vào hệ thống! Cả Ban Quản Lý và Cổng Khách Tham Quan đã nhận dữ liệu mới.');
+        } else {
+          alert('Lỗi lưu dữ liệu: ' + (data.error || 'Thao tác không thành công'));
         }
+      } catch (e) {
+        alert('Lỗi kết nối tới server: ' + e.message);
+      } finally {
+        btnSaveServer.disabled = false;
+        btnSaveServer.textContent = 'Lưu Vào Hệ Thống';
       }
-    } catch (e) {
-      if (authErrorMsg) {
-        authErrorMsg.textContent = 'Lỗi kết nối máy chủ xác thực: ' + e.message;
-        authErrorMsg.style.display = 'block';
-      }
-    } finally {
-      if (btnSubmitAuth) {
-        btnSubmitAuth.disabled = false;
-        btnSubmitAuth.textContent = 'Xác Thực & Mở Studio';
-      }
-    }
-  }
-
-  if (btnSubmitAuth) {
-    btnSubmitAuth.addEventListener('click', handleEditorAuthSubmit);
-  }
-  if (inputKey) {
-    inputKey.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') handleEditorAuthSubmit();
     });
   }
 
-  // Khởi tạo: nếu đã có session key từ cookie đăng nhập thì mở Studio ngay, ngược lại hiện màn hình khóa
-  if (sessionEditorKey) {
-    if (authOverlay) authOverlay.style.display = 'none';
-    if (btnLockScreen) btnLockScreen.style.display = 'inline-flex';
-  } else {
-    showLockScreen();
+  if (btnExportJson) {
+    btnExportJson.addEventListener('click', () => {
+      const payload = {
+        siteCode: siteData?.siteCode || 'NEU',
+        siteName: siteData?.siteName || 'Trường Đại Học Kinh Tế Quốc Dân (NEU)',
+        englishName: siteData?.englishName || 'National Economics University Campus',
+        locationName: siteData?.locationName || '207 Đường Giải Phóng, Hà Nội',
+        center: siteData?.center || { lat: 20.99965, lng: 105.84280 },
+        zoom: siteData?.zoom || 18,
+        zones,
+        pois,
+        artifacts,
+        tourRoute: []
+      };
+
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `siteData_${siteData?.siteCode || 'NEU'}_${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
   }
 
-  btnSaveServer.addEventListener('click', async () => {
-    if (!sessionEditorKey) {
-      alert('Chưa xác thực mã bí mật Map Studio! Vui lòng tải lại trang và nhập mã.');
-      showLockScreen();
-      return;
-    }
-
-    btnSaveServer.disabled = true;
-    btnSaveServer.textContent = 'Đang lưu...';
-
-    const payload = {
-      siteCode: siteData?.siteCode || 'NEU',
-      siteName: siteData?.siteName || 'Trường Đại Học Kinh Tế Quốc Dân (NEU)',
-      locationName: siteData?.locationName || '207 Đường Giải Phóng, Phường Đồng Tâm, Quận Hai Bà Trưng, Hà Nội',
-      center: siteData?.center || { lat: 20.99965, lng: 105.84280 },
-      zoom: siteData?.zoom || 18,
-      zones: zones,
-      pois: pois,
-      artifacts: artifacts,
-      tourRoute: []
-    };
-
-    try {
-      const res = await fetch('/api/editor/save', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Editor-Secret': getEditorKey(),
-          'X-Admin-Secret': getEditorKey()
-        },
-        body: JSON.stringify({ ...payload, editorKey: getEditorKey() })
-      });
-      const data = await res.json();
-      if (data.success) {
-        alert('Đã lưu thành công dữ liệu bản đồ vào hệ thống! Cả Ban Quản Lý và Cổng Khách Tham Quan đã nhận dữ liệu mới.');
-      } else {
-        alert('Lỗi lưu dữ liệu: ' + (data.error || 'Thao tác không thành công'));
+  if (btnResetDefault) {
+    btnResetDefault.addEventListener('click', async () => {
+      if (confirm('Bạn có muốn tải lại dữ liệu từ hệ thống?')) {
+        await loadCurrentSiteData();
+        alert('Đã tải lại dữ liệu thành công!');
       }
-    } catch (e) {
-      alert('Lỗi kết nối tới server: ' + e.message);
-    } finally {
-      btnSaveServer.disabled = false;
-      btnSaveServer.textContent = 'Lưu Vào Hệ Thống';
-    }
-  });
+    });
+  }
 
-  btnExportJson.addEventListener('click', () => {
-    const payload = {
-      siteCode: siteData?.siteCode || 'NEU',
-      siteName: siteData?.siteName || 'Trường Đại Học Kinh Tế Quốc Dân (NEU)',
-      locationName: siteData?.locationName || '207 Đường Giải Phóng, Phường Đồng Tâm, Quận Hai Bà Trưng, Hà Nội',
-      center: siteData?.center || { lat: 20.99965, lng: 105.84280 },
-      zoom: siteData?.zoom || 18,
-      zones,
-      pois,
-      artifacts,
-      tourRoute: []
-    };
-
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `siteData_${siteData?.siteCode || 'NEU'}_${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  });
-
-  btnResetDefault.addEventListener('click', async () => {
-    if (confirm('Bạn có muốn khôi phục lại dữ liệu gốc của Trường Đại Học Kinh Tế Quốc Dân (NEU)?')) {
-      await loadCurrentSiteData();
-      alert('Đã khôi phục dữ liệu gốc!');
-    }
-  });
-
-  // 10. TIỆN ÍCH HIỂN THỊ TỌA ĐỘ VÀ BANNER
+  // Tiện ích hiển thị tọa độ
   const coordStatus = document.getElementById('coord-status');
   map.on('mousemove', (e) => {
-    coordStatus.textContent = `Lat: ${e.latlng.lat.toFixed(6)} | Lng: ${e.latlng.lng.toFixed(6)} | Zoom: ${map.getZoom()}`;
+    if (coordStatus) {
+      coordStatus.textContent = `Lat: ${e.latlng.lat.toFixed(6)} | Lng: ${e.latlng.lng.toFixed(6)} | Zoom: ${map.getZoom()}`;
+    }
   });
 
   const drawingHint = document.getElementById('drawing-hint');
   function showHint(text) {
-    drawingHint.textContent = text;
-    drawingHint.style.display = 'block';
+    if (drawingHint) {
+      drawingHint.textContent = text;
+      drawingHint.style.display = 'block';
+    }
   }
   function hideHint() {
-    drawingHint.style.display = 'none';
+    if (drawingHint) {
+      drawingHint.style.display = 'none';
+    }
   }
-});
+
+  // Cập nhật lại kích thước hiển thị bản đồ
+  setTimeout(() => { if (map) map.invalidateSize(); }, 80);
+  setTimeout(() => { if (map) map.invalidateSize(); }, 250);
+}

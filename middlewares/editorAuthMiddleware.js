@@ -3,28 +3,23 @@
  * Ngăn chặn kẻ gian sửa đổi hoặc phá hoại dữ liệu bản đồ, POI, Hiện vật và Phân khu
  */
 
-const { EDITOR_SECRET_KEY, ADMIN_SECRET_KEY } = require('../config/appConfig');
+const { EDITOR_SECRET_KEY } = require('../config/appConfig');
 
 function checkEditorSecretValid(req) {
   const incomingKey = (
     req.headers['x-editor-secret'] ||
     req.headers['x-editor-key'] ||
     req.headers['editor-secret-key'] ||
-    req.headers['x-admin-secret'] ||
-    req.headers['x-admin-key'] ||
     (req.headers['authorization'] && req.headers['authorization'].replace(/^Bearer\s+/i, '')) ||
     req.body?.editorKey ||
-    req.body?.adminKey ||
-    req.body?.secretKey ||
     req.body?.key ||
     req.query?.editorKey ||
-    req.query?.adminKey ||
     req.query?.key ||
     ''
   ).trim();
 
-  // Chấp nhận khóa riêng của Editor, hoặc khóa tổng của Ban Quản Lý (Admin)
-  return incomingKey === EDITOR_SECRET_KEY || incomingKey === ADMIN_SECRET_KEY;
+  // CHỈ chấp nhận đúng khóa riêng của Map Studio Editor! TUYỆT ĐỐI KHÔNG CHẤP NHẬN MÃ BAN QUẢN LÝ!
+  return incomingKey === EDITOR_SECRET_KEY;
 }
 
 function verifyEditorSecret(req, res, next) {
