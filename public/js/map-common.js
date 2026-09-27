@@ -78,25 +78,9 @@ const MapCommon = {
     return zoneLayers;
   },
 
-  // 3. VẼ ĐƯỜNG TUYẾN THAM QUAN (VISITING ROUTE - THEO SƠ ĐỒ)
+  // 3. VẼ ĐƯỜNG TUYẾN THAM QUAN (ĐÃ VÔ HIỆU HÓA HOÀN TOÀN THEO YÊU CẦU)
   renderTourRoute(map, tourRoute) {
-    if (!tourRoute || !Array.isArray(tourRoute) || tourRoute.length < 2) return null;
-
-    const routePolyline = L.polyline(tourRoute, {
-      color: '#f97316', // Màu cam nổi bật theo sơ đồ tham quan
-      weight: 3.5,
-      opacity: 0.85,
-      dashArray: '8, 8',
-      lineJoin: 'round'
-    }).addTo(map);
-
-    routePolyline.bindPopup(`
-      <div style="font-size: 0.8rem; font-weight: 700; color: #f97316;">
-        Tuyến Tham Quan Khuyên Dùng (${tourRoute.length} Điểm)
-      </div>
-    `);
-
-    return routePolyline;
+    return null;
   },
 
   // 4. VẼ CÁC ĐIỂM DI TÍCH (POIs) - DÙNG ICON CHỈ VỊ TRÍ CHUYÊN NGHIỆP (LOCATION PIN)
@@ -313,19 +297,7 @@ const MapCommon = {
       const spacingLat = cellSpacingMeters / METERS_PER_DEG_LAT;
       const spacingLng = cellSpacingMeters / (METERS_PER_DEG_LAT * Math.cos(centerLat * Math.PI / 180));
 
-      // Vẽ điểm tâm mạng lưới (vị trí GPS thực tế của nhóm)
-      if (this.gridLinesGroup && map) {
-        const centerMarker = L.circleMarker([centerLat, centerLng], {
-          radius: 7,
-          color: '#f59e0b',
-          weight: 2,
-          fillColor: '#b45309',
-          fillOpacity: 0.6
-        });
-        centerMarker.bindTooltip(`Tâm nhóm (${N} du khách tụ tập)`, { direction: 'top', className: 'zone-label-tooltip' });
-        this.gridLinesGroup.addLayer(centerMarker);
-      }
-
+      // Không vẽ bất kỳ điểm tâm hay đường nét nét đứt spider line nào theo yêu cầu người dùng
       cluster.forEach((hub, idx) => {
         const row = Math.floor(idx / cols);
         const col = idx % cols;
@@ -341,17 +313,6 @@ const MapCommon = {
         hub.isCollided = true;
         hub.clusterCount = N;
         hub.clusterMembers = memberIds;
-
-        // Vẽ đường mạng lưới nối từ tâm thực tế đến vị trí ghim trên lưới (Spider Line)
-        if (this.gridLinesGroup && map) {
-          const line = L.polyline([[centerLat, centerLng], [hub.displayLat, hub.displayLng]], {
-            color: '#38bdf8',
-            weight: 1.5,
-            opacity: 0.7,
-            dashArray: '3, 4'
-          });
-          this.gridLinesGroup.addLayer(line);
-        }
       });
     });
 
@@ -505,34 +466,28 @@ const MapCommon = {
     const sightLng = lng + (distanceMeters * Math.sin(centerRad)) / METERS_PER_DEG_LNG;
     const sightPoints = [[lat, lng], [sightLat, sightLng]];
 
-    if (currentConeObj && currentConeObj.conePolygon && currentConeObj.sightLine) {
+    if (currentConeObj && currentConeObj.conePolygon) {
       currentConeObj.conePolygon.setLatLngs(points);
-      currentConeObj.sightLine.setLatLngs(sightPoints);
+      if (currentConeObj.sightLine) {
+        map.removeLayer(currentConeObj.sightLine);
+        currentConeObj.sightLine = null;
+      }
       return currentConeObj;
     }
 
-    // Nếu chưa tạo, tạo mới polygon nón tầm nhìn và đường ngắm
+    // Nếu chưa tạo, tạo mới polygon nón tầm nhìn (không vẽ tia ngắm polyline)
     const conePolygon = L.polygon(points, {
       color: '#fbbf24',       // Viền vàng hổ phách sáng
       weight: 1.5,
       opacity: 0.85,
       fillColor: '#f59e0b',   // Nền vàng ấm
       fillOpacity: 0.22,
-      interactive: false,
-      dashArray: '4, 4'
-    }).addTo(map);
-
-    const sightLine = L.polyline(sightPoints, {
-      color: '#fef08a',       // Tia ngắm vàng nhạt nổi bật
-      weight: 2,
-      opacity: 0.95,
-      dashArray: '3, 4',
       interactive: false
     }).addTo(map);
 
     return {
       conePolygon,
-      sightLine,
+      sightLine: null,
       setVision(newLat, newLng, newYaw) {
         return MapCommon.renderVisionCone(map, this, newLat, newLng, newYaw, fovAngle, distanceMeters);
       },

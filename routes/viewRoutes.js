@@ -1,32 +1,32 @@
 /**
  * 2Guide - Routes: ViewRoutes
  * Định tuyến các trang giao diện (Khách tham quan, Ban quản trị, Giả lập, Biên tập)
+ * Áp dụng cơ chế bảo vệ kép: Đường dẫn bí mật + Màn hình đăng nhập Secret Key
  */
 
 const express = require('express');
 const router = express.Router();
 const viewController = require('../controllers/viewController');
-const { ADMIN_SECRET_PATH } = require('../config/appConfig');
+const { ADMIN_SECRET_PATH, EDITOR_SECRET_PATH } = require('../config/appConfig');
 
-// Chặn truy cập trực tiếp file index.html hoặc đường dẫn quản lý cũ
-router.get(['/index.html', '/admin', '/quanly'], viewController.blockOldAdmin);
-
-// Chuyển hướng user.html sang /user
+// 1. Cổng khách tham quan: /user và /user.html
 router.get('/user.html', viewController.redirectUserHtml);
-
-// Cổng khách tham quan: /user
 router.get('/user', viewController.renderUser);
 
-// Cổng quản lý bí mật theo biến môi trường .env
+// 2. Cổng quản lý Ban Quản Lý: CHỈ CHO PHÉP TRUY CẬP QUA ĐƯỜNG DẪN BÍ MẬT
 router.get(ADMIN_SECRET_PATH, viewController.renderAdmin);
+// Chặn hoàn toàn mọi đường dẫn công khai cũ /admin, /quanly, /index.html
+router.get(['/admin', '/quanly', '/index.html'], viewController.blockPublicAdmin);
 
-// Cổng giả lập tín hiệu GPS & Pin
-router.get('/simulate', viewController.renderSimulate);
+// 3. Cổng giả lập tín hiệu GPS & Pin
+router.get(['/simulate', '/simulate.html'], viewController.renderSimulate);
 
-// Studio Biên tập Bản đồ & Hiện vật
-router.get('/editor', viewController.renderEditor);
+// 4. Studio Biên tập Bản đồ & Hiện vật: CHỈ CHO PHÉP TRUY CẬP QUA ĐƯỜNG DẪN BÍ MẬT
+router.get(EDITOR_SECRET_PATH, viewController.renderEditor);
+// Chặn hoàn toàn mọi đường dẫn công khai cũ /editor, /editor.html
+router.get(['/editor', '/editor.html'], viewController.blockPublicEditor);
 
-// Trang chủ mặc định chuyển hướng sang /user
+// 5. Trang chủ mặc định chuyển hướng sang /user
 router.get('/', viewController.redirectRoot);
 
 module.exports = router;

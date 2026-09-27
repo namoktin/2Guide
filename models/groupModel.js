@@ -1,5 +1,5 @@
 /**
- * 2Guide - Model: Group (Quản lý đoàn khách tham quan, mã QR token dùng 1 lần và tuyến đường di chuyển)
+ * 2Guide - Model: Group (Quản lý đoàn khách tham quan và mã QR token)
  */
 
 const crypto = require('crypto');
@@ -73,49 +73,20 @@ class GroupModel {
       qrCodeDataUrl,
       createdAt: new Date().toISOString(),
       endedAt: null,
-      status: 'ACTIVE',
-      trajectories: {}
+      status: 'ACTIVE'
     };
 
     // Gán mapping token -> groupId
     this.groupTokens[secureToken] = groupId;
 
-    // Gán các Hub vào đoàn này và khởi tạo mảng vết di chuyển
+    // Gán các Hub vào đoàn này
     normalizedHubIds.forEach(id => {
       hubModel.findOrCreate(id, siteCenter);
       hubModel.setGroupId(id, groupId);
-      newGroup.trajectories[id] = [];
     });
 
     this.groups[groupId] = newGroup;
     return newGroup;
-  }
-
-  recordTrajectory(groupId, rawHubId, lat, lng) {
-    const hubId = normalizeHubId(rawHubId);
-    const group = this.groups[groupId];
-    if (!group || group.status !== 'ACTIVE') return false;
-
-    if (!group.trajectories[hubId]) {
-      group.trajectories[hubId] = [];
-    }
-
-    const points = group.trajectories[hubId];
-    const shouldAdd = points.length === 0 || (
-      Math.abs(points[points.length - 1].lat - lat) > 0.000015 ||
-      Math.abs(points[points.length - 1].lng - lng) > 0.000015
-    );
-
-    if (shouldAdd) {
-      points.push({
-        lat: Number(lat),
-        lng: Number(lng),
-        timestamp: Date.now()
-      });
-      return true;
-    }
-
-    return false;
   }
 
   endGroup(identifier, hubModel) {
@@ -129,9 +100,6 @@ class GroupModel {
 
     group.status = 'ENDED';
     group.endedAt = new Date().toISOString();
-
-    // BẢO MẬT & BỘ NHỚ: Xóa sạch toàn bộ dữ liệu tuyến đường di chuyển khi kết thúc phiên
-    group.trajectories = {};
 
     // Giải phóng các Hub về trạng thái rảnh rỗi (idle)
     if (group.hubIds && Array.isArray(group.hubIds)) {
@@ -147,6 +115,12 @@ class GroupModel {
 
     return group;
   }
+
+  // Phương thức no-op an toàn
+  recordTrajectory() {
+    return false;
+  }
 }
 
 module.exports = new GroupModel();
+

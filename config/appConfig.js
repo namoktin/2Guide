@@ -13,6 +13,8 @@ const SITE_NAME = (process.env.SITE_NAME || siteData.siteName || 'Trường Đ�
 const ADMIN_SECRET_PATH = (process.env.ADMIN_SECRET_PATH || '/quanly_bql_8869').trim();
 const ESP32_SECRET_KEY = (process.env.ESP32_SECRET_KEY || 'esp_sec_2026_98a72b').trim();
 const ADMIN_SECRET_KEY = (process.env.ADMIN_SECRET_KEY || 'bql_sec_2026_x89a3f').trim();
+const EDITOR_SECRET_PATH = (process.env.EDITOR_SECRET_PATH || '/editor_bql_7749').trim();
+const EDITOR_SECRET_KEY = (process.env.EDITOR_SECRET_KEY || 'editor_sec_2026_z91k4c').trim();
 const GROQ_API_KEY = (process.env.GROQ_API_KEY || '').trim();
 const GROQ_MODEL = (process.env.GROQ_MODEL || 'openai/gpt-oss-120b').trim();
 const MONGODB_URI = (process.env.MONGODB_URI || '').trim();
@@ -46,6 +48,8 @@ module.exports = {
   ADMIN_SECRET_PATH,
   ESP32_SECRET_KEY,
   ADMIN_SECRET_KEY,
+  EDITOR_SECRET_PATH,
+  EDITOR_SECRET_KEY,
   GROQ_API_KEY,
   GROQ_MODEL,
   MONGODB_URI,

@@ -611,6 +611,34 @@ body {
   display: block;
 }
 
+/* Toast Thông Báo Khi Điểm POI Trong Tầm Nhìn 1.5s */
+.vision-speech-toast {
+  position: fixed;
+  top: max(74px, calc(env(safe-area-inset-top) + 74px));
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid var(--accent-amber);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  max-width: calc(100vw - 24px);
+  width: max-content;
+  box-sizing: border-box;
+  z-index: 4000;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  animation: fadeInDown 0.3s ease;
+}
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translate(-50%, -10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
 
 
 /* Zone Polygon Label */
@@ -711,6 +739,149 @@ body {
 
 @keyframes fadeInTag {
   from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ============================================================
+   5. MÀN HÌNH KHÓA XÁC THỰC MÃ BÍ MẬT (QUẢN LÝ & EDITOR)
+   ============================================================ */
+.auth-lock-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(7, 9, 14, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: authFadeIn 0.25s ease;
+}
+
+.auth-lock-card {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 34px 30px;
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 24px 60px -12px rgba(0, 0, 0, 0.8),
+    0 0 40px -10px rgba(14, 165, 233, 0.2);
+  text-align: center;
+  position: relative;
+}
+
+.auth-lock-card .brand-icon-wrapper {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(15, 23, 42, 0.6) 100%);
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 20px -4px rgba(14, 165, 233, 0.25);
+}
+
+.auth-lock-card.editor-theme .brand-icon-wrapper {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(15, 23, 42, 0.6) 100%);
+  border-color: rgba(245, 158, 11, 0.3);
+  box-shadow: 0 8px 20px -4px rgba(245, 158, 11, 0.25);
+}
+
+.auth-lock-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.auth-lock-desc {
+  font-size: 0.83rem;
+  color: #94a3b8;
+  margin-bottom: 22px;
+  line-height: 1.5;
+}
+
+.auth-form-group {
+  text-align: left;
+  margin-bottom: 18px;
+}
+
+.auth-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.auth-input {
+  width: 100%;
+  background: #090e17 !important;
+  border: 1px solid #1e293b !important;
+  border-radius: 10px !important;
+  color: #ffffff !important;
+  padding: 12px 42px 12px 14px !important;
+  font-size: 0.95rem !important;
+  outline: none !important;
+  transition: all 0.2s ease !important;
+  letter-spacing: 2px;
+}
+
+.auth-input.is-text {
+  letter-spacing: normal !important;
+}
+
+.auth-input:focus {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15), 0 0 16px rgba(56, 189, 248, 0.1) !important;
+  background: #0b121e !important;
+}
+
+.btn-toggle-vis {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: color 0.15s ease;
+}
+
+.btn-toggle-vis:hover {
+  color: #cbd5e1;
+}
+
+.auth-error-msg {
+  display: none;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #fca5a5;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-top: 8px;
+  text-align: left;
+}
+
+@keyframes authFadeIn {
+  from { opacity: 0; transform: scale(0.98); }
   to { opacity: 1; transform: scale(1); }
 }
 

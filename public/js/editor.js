@@ -11,9 +11,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let pois = [];
   let artifacts = [];
   let zones = [];
-  let tourRoute = [];
-
-  let currentMode = 'poi'; // 'poi' | 'artifact' | 'zone' | 'route'
+  let currentMode = 'poi'; // 'poi' | 'artifact' | 'zone'
   let selectedPoi = null;
   let selectedArtifact = null;
   let selectedZone = null;
@@ -22,16 +20,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const poiLayerGroup = L.featureGroup().addTo(map);
   const artifactLayerGroup = L.featureGroup().addTo(map);
   const zoneLayerGroup = L.featureGroup().addTo(map);
-  let routePolyline = null;
-  const routeWaypointGroup = L.featureGroup().addTo(map);
 
   // Biến phục vụ vẽ vùng (Zone Drawing)
   let isDrawingZone = false;
   let tempZonePoints = [];
   let tempZoneLine = null;
-
-  // Biến phục vụ vẽ tuyến (Route Drawing)
-  let isDrawingRoute = false;
 
   // 2. NẠP DỮ LIỆU HIỆN TẠI TỪ SERVER
   await loadCurrentSiteData();
@@ -45,7 +38,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         pois = siteData.pois || [];
         artifacts = siteData.artifacts || [];
         zones = siteData.zones || [];
-        tourRoute = siteData.tourRoute || [];
 
         if (siteData.center) {
           map.setView([siteData.center.lat, siteData.center.lng], siteData.zoom || 18);
@@ -56,7 +48,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderPoiList();
         renderArtifactList();
         renderZoneList();
-        updateRoutePointCount();
 
         if (pois.length > 0) selectPoi(pois[0]);
         else if (artifacts.length > 0) selectArtifact(artifacts[0]);
@@ -78,7 +69,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderPoiMarkers();
     renderArtifactMarkers();
     renderZonePolygons();
-    renderRoutePolyline();
   }
 
   // --- VẼ CÁC ĐIỂM DI TÍCH (POIs) VỚI KHẢ NĂNG KÉO THẢ (DRAGGABLE) ---
@@ -205,62 +195,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // --- VẼ TUYẾN ĐƯỜNG THAM QUAN (TOUR ROUTE) & CÁC NÚT ĐIỀU CHỈNH ---
-  function renderRoutePolyline() {
-    if (routePolyline) map.removeLayer(routePolyline);
-    routeWaypointGroup.clearLayers();
-
-    if (!tourRoute || tourRoute.length < 2) return;
-
-    routePolyline = L.polyline(tourRoute, {
-      color: '#f97316',
-      weight: 4,
-      opacity: 0.9,
-      dashArray: '8, 8',
-      lineJoin: 'round'
-    }).addTo(map);
-
-    // Tạo các nút tròn có thể kéo thả để uốn cong tuyến đường
-    if (currentMode === 'route') {
-      tourRoute.forEach((pt, idx) => {
-        const handle = L.circleMarker(pt, {
-          radius: 5,
-          color: '#ffffff',
-          weight: 2,
-          fillColor: '#f97316',
-          fillOpacity: 1,
-          draggable: true
-        });
-
-        let isDragging = false;
-        handle.on('mousedown', () => { isDragging = true; map.dragging.disable(); });
-        map.on('mousemove', (e) => {
-          if (isDragging) {
-            handle.setLatLng(e.latlng);
-            tourRoute[idx] = [Number(e.latlng.lat.toFixed(6)), Number(e.latlng.lng.toFixed(6))];
-            routePolyline.setLatLngs(tourRoute);
-          }
-        });
-        map.on('mouseup', () => {
-          if (isDragging) {
-            isDragging = false;
-            map.dragging.enable();
-            updateRoutePointCount();
-          }
-        });
-
-        routeWaypointGroup.addLayer(handle);
-      });
-    }
-  }
-
   // 4. CHUYỂN ĐỔI CHẾ ĐỘ BIÊN TẬP
   const modeButtons = document.querySelectorAll('.mode-btn');
   const panels = {
     poi: document.getElementById('panel-poi'),
     artifact: document.getElementById('panel-artifact'),
-    zone: document.getElementById('panel-zone'),
-    route: document.getElementById('panel-route')
+    zone: document.getElementById('panel-zone')
   };
 
   modeButtons.forEach(btn => {
@@ -278,10 +218,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       setAddingPoiMode(false);
       setAddingArtifactMode(false);
       cancelZoneDrawing();
-      isDrawingRoute = false;
       hideHint();
-
-      renderRoutePolyline();
     });
   });
 
@@ -351,13 +288,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       tempZoneLine = L.polyline(tempZonePoints, { color: '#06b6d4', weight: 2, dashArray: '4, 4' }).addTo(map);
 
       showHint(`Đã chọn ${tempZonePoints.length} đỉnh. Bấm tiếp để thêm đỉnh hoặc bấm "Khép Kín Vùng" để hoàn tất.`);
-    }
-
-    // CHẾ ĐỘ 3: VẼ TUYẾN ĐƯỜNG
-    else if (currentMode === 'route' && isDrawingRoute) {
-      tourRoute.push([lat, lng]);
-      renderRoutePolyline();
-      updateRoutePointCount();
     }
   });
 
@@ -683,59 +613,128 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (z) selectZone(z);
   };
 
-  // 8. LOGIC BIÊN TẬP TUYẾN THAM QUAN (TOUR ROUTE)
-  const btnAutoConnect = document.getElementById('btn-auto-connect-route');
-  const btnStartRouteDraw = document.getElementById('btn-start-route-draw');
-  const btnClearRoute = document.getElementById('btn-clear-route');
-
-  // Nối tự động theo thứ tự các Điểm POI (1 -> N), hoặc Hiện vật nếu không có POI
-  btnAutoConnect.addEventListener('click', () => {
-    const targetSource = pois.length >= 2 ? pois : artifacts;
-    if (targetSource.length < 2) {
-      alert('Cần ít nhất 2 điểm POI hoặc hiện vật để tự động tạo tuyến đường tham quan!');
-      return;
-    }
-
-    const sorted = [...targetSource].sort((a, b) => (a.number || 0) - (b.number || 0));
-    tourRoute = sorted.map(p => [p.lat, p.lng]);
-
-    renderRoutePolyline();
-    updateRoutePointCount();
-    alert(`Đã tự động nối tuyến đường qua ${tourRoute.length} điểm tham quan! Bạn có thể kéo thả các nút tròn màu cam để uốn lượn đường đi theo ý muốn.`);
-  });
-
-  btnStartRouteDraw.addEventListener('click', () => {
-    isDrawingRoute = !isDrawingRoute;
-    if (isDrawingRoute) {
-      btnStartRouteDraw.textContent = 'Dừng Bấm Thêm Nút';
-      btnStartRouteDraw.className = 'btn btn-secondary btn-sm';
-      showHint('Hãy bấm lên bản đồ để thêm các khúc quanh/lối rẽ trên tuyến tham quan...');
-    } else {
-      btnStartRouteDraw.textContent = 'Bấm Thêm Nút Điểm';
-      btnStartRouteDraw.className = 'btn btn-primary btn-sm';
-      hideHint();
-    }
-  });
-
-  btnClearRoute.addEventListener('click', () => {
-    if (confirm('Bạn có chắc muốn xóa tuyến đường tham quan hiện tại?')) {
-      tourRoute = [];
-      renderRoutePolyline();
-      updateRoutePointCount();
-    }
-  });
-
-  function updateRoutePointCount() {
-    const countEl = document.getElementById('route-points-count');
-    if (countEl) countEl.textContent = tourRoute.length;
-  }
-
-  // 9. LƯU VÀO HỆ THỐNG & XUẤT FILE JSON
+  // 8. LƯU VÀO HỆ THỐNG & XUẤT FILE JSON
   const btnSaveServer = document.getElementById('btn-save-server');
   const btnExportJson = document.getElementById('btn-export-json');
   const btnResetDefault = document.getElementById('btn-reset-default');
 
+  // --- XÁC THỰC MÃ BÍ MẬT MAP STUDIO (MỖI LẦN VÀO PHẢI NHẬP KEY) ---
+  function getCookie(name) {
+    const match = document.cookie.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'));
+    return match ? decodeURIComponent(match[1]) : '';
+  }
+
+  let sessionEditorKey = getCookie('editor_session_key') || '';
+  const getEditorKey = () => sessionEditorKey;
+
+  const authOverlay = document.getElementById('editor-auth-lock-overlay');
+  const inputKey = document.getElementById('input-editor-auth-key');
+  const btnSubmitAuth = document.getElementById('btn-submit-editor-auth');
+  const authErrorMsg = document.getElementById('editor-auth-error-msg');
+  const btnToggleVis = document.getElementById('btn-toggle-editor-key-vis');
+  const btnLockScreen = document.getElementById('btn-editor-lock-screen');
+
+  if (btnToggleVis && inputKey) {
+    let isShowing = false;
+    btnToggleVis.addEventListener('click', () => {
+      isShowing = !isShowing;
+      inputKey.type = isShowing ? 'text' : 'password';
+      inputKey.classList.toggle('is-password', !isShowing);
+      const svg = document.getElementById('editor-svg-eye');
+      if (svg) {
+        svg.innerHTML = isShowing
+          ? '<path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/>'
+          : '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>';
+      }
+    });
+  }
+
+  function showLockScreen() {
+    sessionEditorKey = '';
+    document.cookie = 'editor_session_key=; Path=/; Max-Age=0';
+    if (authOverlay) authOverlay.style.display = 'flex';
+    if (btnLockScreen) btnLockScreen.style.display = 'none';
+    if (inputKey) {
+      inputKey.value = '';
+      setTimeout(() => inputKey.focus(), 150);
+    }
+    if (authErrorMsg) authErrorMsg.style.display = 'none';
+  }
+
+  if (btnLockScreen) {
+    btnLockScreen.addEventListener('click', showLockScreen);
+  }
+
+  async function handleEditorAuthSubmit() {
+    const entered = (inputKey ? inputKey.value : '').trim();
+    if (!entered) {
+      if (authErrorMsg) {
+        authErrorMsg.textContent = 'Vui lòng nhập mã bí mật Map Studio!';
+        authErrorMsg.style.display = 'block';
+      }
+      return;
+    }
+
+    if (btnSubmitAuth) {
+      btnSubmitAuth.disabled = true;
+      btnSubmitAuth.textContent = 'Đang xác thực...';
+    }
+
+    try {
+      const res = await fetch('/api/editor/verify-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ editorKey: entered, key: entered })
+      });
+      const data = await res.json();
+      if (data.success) {
+        sessionEditorKey = entered;
+        if (authOverlay) authOverlay.style.display = 'none';
+        if (btnLockScreen) btnLockScreen.style.display = 'inline-flex';
+        if (authErrorMsg) authErrorMsg.style.display = 'none';
+      } else {
+        if (authErrorMsg) {
+          authErrorMsg.textContent = data.error || 'Mã bí mật Map Studio không chính xác!';
+          authErrorMsg.style.display = 'block';
+        }
+      }
+    } catch (e) {
+      if (authErrorMsg) {
+        authErrorMsg.textContent = 'Lỗi kết nối máy chủ xác thực: ' + e.message;
+        authErrorMsg.style.display = 'block';
+      }
+    } finally {
+      if (btnSubmitAuth) {
+        btnSubmitAuth.disabled = false;
+        btnSubmitAuth.textContent = 'Xác Thực & Mở Studio';
+      }
+    }
+  }
+
+  if (btnSubmitAuth) {
+    btnSubmitAuth.addEventListener('click', handleEditorAuthSubmit);
+  }
+  if (inputKey) {
+    inputKey.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleEditorAuthSubmit();
+    });
+  }
+
+  // Khởi tạo: nếu đã có session key từ cookie đăng nhập thì mở Studio ngay, ngược lại hiện màn hình khóa
+  if (sessionEditorKey) {
+    if (authOverlay) authOverlay.style.display = 'none';
+    if (btnLockScreen) btnLockScreen.style.display = 'inline-flex';
+  } else {
+    showLockScreen();
+  }
+
   btnSaveServer.addEventListener('click', async () => {
+    if (!sessionEditorKey) {
+      alert('Chưa xác thực mã bí mật Map Studio! Vui lòng tải lại trang và nhập mã.');
+      showLockScreen();
+      return;
+    }
+
     btnSaveServer.disabled = true;
     btnSaveServer.textContent = 'Đang lưu...';
 
@@ -748,24 +747,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       zones: zones,
       pois: pois,
       artifacts: artifacts,
-      tourRoute: tourRoute
+      tourRoute: []
     };
 
-    const adminKey = window.__ADMIN_KEY__ || localStorage.getItem('2guide_admin_key') || '';
     try {
       const res = await fetch('/api/editor/save', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Admin-Secret': adminKey
+          'X-Editor-Secret': getEditorKey(),
+          'X-Admin-Secret': getEditorKey()
         },
-        body: JSON.stringify({ ...payload, adminKey })
+        body: JSON.stringify({ ...payload, editorKey: getEditorKey() })
       });
       const data = await res.json();
       if (data.success) {
         alert('Đã lưu thành công dữ liệu bản đồ vào hệ thống! Cả Ban Quản Lý và Cổng Khách Tham Quan đã nhận dữ liệu mới.');
       } else {
-        alert('Lỗi lưu dữ liệu: ' + data.error);
+        alert('Lỗi lưu dữ liệu: ' + (data.error || 'Thao tác không thành công'));
       }
     } catch (e) {
       alert('Lỗi kết nối tới server: ' + e.message);
@@ -785,7 +784,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       zones,
       pois,
       artifacts,
-      tourRoute
+      tourRoute: []
     };
 
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });

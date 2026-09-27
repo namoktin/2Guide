@@ -615,10 +615,16 @@
     <div id="ai-chat-drawer" class="ai-chat-drawer">
       <div class="sheet-drag-handle"></div>
       <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 6px;">
-        <div>
+        <div style="display: flex; align-items: center; gap: 8px;">
           <span style="font-weight: 800; color: #60a5fa; font-size: 0.85rem;">Trợ Lý Hướng Dẫn Viên AI</span>
+          <span id="ai-chat-ttl-badge" style="font-size: 0.68rem; padding: 2px 7px; border-radius: 10px; background: rgba(59, 130, 246, 0.15); border: 1px solid #3b82f6; color: #93c5fd; display: inline-flex; align-items: center; gap: 3px;" title="Đoạn chat & ID máy được lưu tạm 1 tiếng trên máy khách, sau đó tự xóa">
+            ⏱ <span id="ai-chat-ttl-text">Lưu 1h</span>
+          </span>
         </div>
-        <button id="btn-close-ai-chat" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-weight: 700; background: #334155; border: none; color: #fff; border-radius: 4px; cursor: pointer;">Đóng</button>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <button id="btn-clear-ai-chat" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 0.7rem; font-weight: 600; background: #1e293b; border: 1px solid #475569; color: #cbd5e1; border-radius: 4px; cursor: pointer;" title="Xóa dữ liệu chat ngay">Xóa chat</button>
+          <button id="btn-close-ai-chat" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-weight: 700; background: #334155; border: none; color: #fff; border-radius: 4px; cursor: pointer;">Đóng</button>
+        </div>
       </div>
 
       <!-- KHUNG TIN NHẮN -->
@@ -698,7 +704,7 @@
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="/js/map-common.js"></script>
-  <script src="/js/user.js"></script>
+  <script src="/js/map-common.js?v=realtime_v6"></script>
+  <script src="/js/user.js?v=chat_ttl_v1"></script>
 </body>
 </html>

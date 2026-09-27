@@ -9,6 +9,7 @@ const { ESP32_SECRET_KEY, normalizeHubId } = require('../config/appConfig');
 
 class GazeService {
   constructor() {
+    this.hubAutoGazeMap = {};
     this.hubGazeTracking = {};
     this.lastTriggeredTime = {};
   }

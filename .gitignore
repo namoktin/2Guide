@@ -1,6 +1,40 @@
+# Dependencies (Thư viện phụ thuộc Node.js)
 node_modules/
+
+# Environment Variables & Secrets (BẢO MẬT: Tuyệt đối không commit file chứa secret key)
 .env
-uploads/
+.env.local
+.env.*.local
+
+# Thư mục tải file tạm thời
+uploads/*
+!uploads/.gitkeep
+
+# File nhật ký hệ thống (Logs)
+logs/
+*.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# File hệ điều hành (macOS / Windows)
 .DS_Store
-readme/
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Cấu hình IDE / Text Editor
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Đảm bảo các tệp âm thanh thuyết minh thẻ nhớ MicroSD trong public/audio được theo dõi
+!public/audio/
+!public/audio/sdcard/
+!public/audio/sdcard/*.mp3
+!public/*.mp3

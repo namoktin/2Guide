@@ -129,7 +129,11 @@ class DatabaseService {
           );
         }
         siteData.artifacts = existing.artifacts || siteData.artifacts;
-        siteData.tourRoute = existing.tourRoute || siteData.tourRoute;
+        siteData.tourRoute = [];
+        await this.SiteDataModel.updateOne(
+          { siteCode: siteData.siteCode || 'NEU' },
+          { $set: { tourRoute: [] } }
+        ).catch(() => {});
         console.log('[MongoDB Atlas] Đã nạp dữ liệu bản đồ từ MongoDB Atlas.');
       } else {
         // Lưu dữ liệu ban đầu lên Atlas
@@ -171,7 +175,7 @@ class DatabaseService {
             zones: siteData.zones,
             pois: siteData.pois || [],
             artifacts: siteData.artifacts,
-            tourRoute: siteData.tourRoute
+            tourRoute: []
           },
           { upsert: true, new: true }
         );

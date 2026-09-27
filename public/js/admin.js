@@ -46,108 +46,213 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error('Lỗi nạp site data:', err);
   }
 
-  // 2. KẾT NỐI WEBSOCKET REALTIME
-  const getAdminKey = () => window.__ADMIN_KEY__ || localStorage.getItem('2guide_admin_key') || '';
+  // 2. XÁC THỰC MÃ BÍ MẬT QUẢN TRỊ (MỖI LẦN VÀO PHẢI NHẬP KEY)
+  function getCookie(name) {
+    const match = document.cookie.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'));
+    return match ? decodeURIComponent(match[1]) : '';
+  }
 
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const ws = new WebSocket(`${protocol}//${window.location.host}`);
+  let sessionAdminKey = getCookie('admin_session_key') || '';
+  const getAdminKey = () => sessionAdminKey;
 
-  ws.onopen = () => {
-    console.log('[Admin WS] Đã kết nối máy chủ realtime');
-    ws.send(JSON.stringify({
-      type: 'REGISTER_ADMIN',
-      adminKey: getAdminKey()
-    }));
-  };
+  const authOverlay = document.getElementById('admin-auth-lock-overlay');
+  const inputKey = document.getElementById('input-admin-auth-key');
+  const btnSubmitAuth = document.getElementById('btn-submit-admin-auth');
+  const authErrorMsg = document.getElementById('admin-auth-error-msg');
+  const btnToggleVis = document.getElementById('btn-toggle-admin-key-vis');
+  const btnLockScreen = document.getElementById('btn-admin-lock-screen');
 
-  ws.onmessage = (event) => {
+  if (btnToggleVis && inputKey) {
+    let isShowing = false;
+    btnToggleVis.addEventListener('click', () => {
+      isShowing = !isShowing;
+      inputKey.type = isShowing ? 'text' : 'password';
+      inputKey.classList.toggle('is-password', !isShowing);
+      const svg = document.getElementById('admin-svg-eye');
+      if (svg) {
+        svg.innerHTML = isShowing
+          ? '<path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/>'
+          : '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>';
+      }
+    });
+  }
+
+  function showLockScreen() {
+    sessionAdminKey = '';
+    document.cookie = 'admin_session_key=; Path=/; Max-Age=0';
+    if (authOverlay) authOverlay.style.display = 'flex';
+    if (btnLockScreen) btnLockScreen.style.display = 'none';
+    if (inputKey) {
+      inputKey.value = '';
+      setTimeout(() => inputKey.focus(), 150);
+    }
+    if (authErrorMsg) authErrorMsg.style.display = 'none';
+    if (ws) {
+      try { ws.close(); } catch (e) {}
+      ws = null;
+    }
+  }
+
+  if (btnLockScreen) {
+    btnLockScreen.addEventListener('click', showLockScreen);
+  }
+
+  async function handleAdminAuthSubmit() {
+    const entered = (inputKey ? inputKey.value : '').trim();
+    if (!entered) {
+      if (authErrorMsg) {
+        authErrorMsg.textContent = 'Vui lòng nhập mã bí mật quản trị!';
+        authErrorMsg.style.display = 'block';
+      }
+      return;
+    }
+
+    if (btnSubmitAuth) {
+      btnSubmitAuth.disabled = true;
+      btnSubmitAuth.textContent = 'Đang xác thực...';
+    }
+
     try {
-      const msg = JSON.parse(event.data);
-
-      if (msg.type === 'INIT_ADMIN_STATE') {
-        allHubs = msg.hubs || [];
-        allGroups = msg.groups || [];
-        renderAllHubsOnMap();
-        renderHubsList();
-        renderActiveGroups();
-        renderActiveTrajectories();
-        populateBroadcastTargetDropdown();
-      } else if (msg.type === 'HUB_LOCATION_UPDATE') {
-        const hub = msg.hub;
-        if (hub) {
-          const idx = allHubs.findIndex(h => h.hubId === hub.hubId);
-          if (idx >= 0) allHubs[idx] = hub;
-          else allHubs.push(hub);
-
-          // Cập nhật marker trên bản đồ
-          renderAllHubsOnMap();
-          renderHubsList();
-
-          // Ghi nhận tuyến đường realtime cho đoàn đang hoạt động
-          if (hub.currentGroupId) {
-            const grp = allGroups.find(g => g.groupId === hub.currentGroupId && g.status === 'ACTIVE');
-            if (grp) {
-              if (!grp.trajectories) grp.trajectories = {};
-              if (!grp.trajectories[hub.hubId]) grp.trajectories[hub.hubId] = [];
-              const pts = grp.trajectories[hub.hubId];
-              const shouldAdd = pts.length === 0 || (
-                Math.abs(pts[pts.length - 1].lat - hub.lat) > 0.000015 ||
-                Math.abs(pts[pts.length - 1].lng - hub.lng) > 0.000015
-              );
-              if (shouldAdd) {
-                pts.push({ lat: hub.lat, lng: hub.lng, timestamp: Date.now() });
-                renderActiveTrajectories();
-              }
-            }
-          }
-
-          // Nón tầm nhìn tự động di chuyển và xoay theo du khách khi du khách di chuyển
-          if (activeVisionHubId && hub.hubId === activeVisionHubId) {
-            showHubVisionConeOnAdmin(hub);
-          }
+      const res = await fetch('/api/admin/verify-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminKey: entered, key: entered })
+      });
+      const data = await res.json();
+      if (data.success) {
+        sessionAdminKey = entered;
+        if (authOverlay) authOverlay.style.display = 'none';
+        if (btnLockScreen) btnLockScreen.style.display = 'inline-flex';
+        if (authErrorMsg) authErrorMsg.style.display = 'none';
+        // Kết nối WebSocket và nạp dữ liệu realtime
+        connectAdminWebSocket();
+      } else {
+        if (authErrorMsg) {
+          authErrorMsg.textContent = data.error || 'Mã bí mật không chính xác!';
+          authErrorMsg.style.display = 'block';
         }
-      } else if (msg.type === 'GROUP_CREATED') {
-        if (msg.hubs) {
-          allHubs = msg.hubs;
-        } else if (msg.group && msg.group.hubIds) {
-          msg.group.hubIds.forEach(id => {
-            const f = allHubs.find(h => h.hubId === id);
-            if (f) f.currentGroupId = msg.group.groupId;
-          });
-        }
-        allGroups.push(msg.group);
-        renderAllHubsOnMap();
-        renderActiveGroups();
-        renderHubsList();
-        renderActiveTrajectories();
-        populateBroadcastTargetDropdown();
-      } else if (msg.type === 'GROUP_ENDED') {
-        if (msg.hubs) {
-          allHubs = msg.hubs;
-        }
-        const grp = allGroups.find(g => g.groupId === msg.groupId);
-        if (grp) {
-          grp.status = 'ENDED';
-          grp.trajectories = {}; // XÓA SẠCH VẾT DI CHUYỂN KHI KẾT THÚC ĐOÀN
-          if (grp.hubIds) {
-            grp.hubIds.forEach(id => {
-              const f = allHubs.find(h => h.hubId === id);
-              if (f) f.currentGroupId = null;
-            });
-          }
-        }
-        renderAllHubsOnMap();
-        renderActiveGroups();
-        renderHubsList();
-        renderActiveTrajectories(); // Xóa sạch polyline trên bản đồ
-        populateBroadcastTargetDropdown();
-      } else if (msg.type === 'ADMIN_EMERGENCY_BROADCAST') {
-        showEmergencyBanner(`[CAN THIỆP PHÁT THANH] ${msg.message}`);
       }
     } catch (e) {
-      console.warn('Lỗi xử lý WS message:', e);
+      if (authErrorMsg) {
+        authErrorMsg.textContent = 'Lỗi kết nối máy chủ xác thực: ' + e.message;
+        authErrorMsg.style.display = 'block';
+      }
+    } finally {
+      if (btnSubmitAuth) {
+        btnSubmitAuth.disabled = false;
+        btnSubmitAuth.textContent = 'Xác Thực & Mở Giao Diện';
+      }
     }
-  };
+  }
+
+  if (btnSubmitAuth) {
+    btnSubmitAuth.addEventListener('click', handleAdminAuthSubmit);
+  }
+  if (inputKey) {
+    inputKey.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleAdminAuthSubmit();
+    });
+  }
+
+  let ws = null;
+  function connectAdminWebSocket() {
+    if (!sessionAdminKey) return;
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(`${protocol}//${window.location.host}`);
+
+    ws.onopen = () => {
+      console.log('[Admin WS] Đã kết nối máy chủ realtime');
+      ws.send(JSON.stringify({
+        type: 'REGISTER_ADMIN',
+        adminKey: getAdminKey()
+      }));
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+
+        if (msg.type === 'INIT_ADMIN_STATE') {
+          allHubs = msg.hubs || [];
+          allGroups = msg.groups || [];
+          renderAllHubsOnMap();
+          renderHubsList();
+          renderActiveGroups();
+          populateBroadcastTargetDropdown();
+        } else if (msg.type === 'HUB_LOCATION_UPDATE') {
+          const hub = msg.hub;
+          if (hub) {
+            const idx = allHubs.findIndex(h => h.hubId === hub.hubId);
+            if (idx >= 0) allHubs[idx] = { ...allHubs[idx], ...hub };
+            else allHubs.push(hub);
+
+            // Cập nhật marker trên bản đồ ngay lập tức
+            renderAllHubsOnMap();
+            renderHubsList();
+
+            // Nón tầm nhìn tự động di chuyển và xoay theo du khách khi du khách di chuyển
+            if (activeVisionHubId && hub.hubId === activeVisionHubId) {
+              showHubVisionConeOnAdmin(hub);
+            }
+          }
+        } else if (msg.type === 'GROUP_CREATED') {
+          if (msg.hubs) {
+            allHubs = msg.hubs;
+          } else if (msg.group && msg.group.hubIds) {
+            msg.group.hubIds.forEach(id => {
+              const f = allHubs.find(h => h.hubId === id);
+              if (f) f.currentGroupId = msg.group.groupId;
+            });
+          }
+          allGroups.push(msg.group);
+          renderAllHubsOnMap();
+          renderActiveGroups();
+          renderHubsList();
+          populateBroadcastTargetDropdown();
+        } else if (msg.type === 'GROUP_ENDED') {
+          if (msg.hubs) {
+            allHubs = msg.hubs;
+          }
+          const grp = allGroups.find(g => g.groupId === msg.groupId);
+          if (grp) {
+            grp.status = 'ENDED';
+            if (grp.hubIds) {
+              grp.hubIds.forEach(id => {
+                const f = allHubs.find(h => h.hubId === id);
+                if (f) f.currentGroupId = null;
+              });
+            }
+          }
+          renderAllHubsOnMap();
+          renderActiveGroups();
+          renderHubsList();
+          populateBroadcastTargetDropdown();
+        } else if (msg.type === 'ADMIN_EMERGENCY_BROADCAST') {
+          showEmergencyBanner(`[CAN THIỆP PHÁT THANH] ${msg.message}`);
+        }
+      } catch (e) {
+        console.warn('Lỗi xử lý WS message:', e);
+      }
+    };
+
+    ws.onclose = () => {
+      console.warn('[Admin WS] Mất kết nối realtime, tự động kết nối lại sau 2 giây...');
+      setTimeout(connectAdminWebSocket, 2000);
+    };
+
+    ws.onerror = (err) => {
+      console.warn('[Admin WS] Lỗi WebSocket:', err);
+    };
+  }
+
+  // Khởi tạo: nếu đã có session key từ cookie đăng nhập thì kết nối ngay, ngược lại hiện màn hình khóa
+  if (sessionAdminKey) {
+    if (authOverlay) authOverlay.style.display = 'none';
+    if (btnLockScreen) btnLockScreen.style.display = 'inline-flex';
+    connectAdminWebSocket();
+  } else {
+    showLockScreen();
+  }
 
   // 3. VẼ TẤT CẢ HUBS LÊN BẢN ĐỒ
   // Đã gom nhóm = Màu xanh nước | Chưa gom nhóm = Màu xám
@@ -372,62 +477,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderActiveTrajectories();
   }
 
-  // 6.1 VẼ TUYẾN ĐƯỜNG DI CHUYỂN CỦA ĐOÀN ĐANG HOẠT ĐỘNG (CHỈ XEM TRONG PHIÊN THAM QUAN)
+  // 6.1 TUYẾN ĐƯỜNG DI CHUYỂN ĐÃ BỊ XÓA HOÀN TOÀN THEO YÊU CẦU
   function renderActiveTrajectories() {
-    trajectoriesLayerGroup.clearLayers();
-    const chkTraj = document.getElementById('chk-toggle-trajectories');
-    if (chkTraj && !chkTraj.checked) return;
-
-    const active = allGroups.filter(g => g.status === 'ACTIVE');
-    const colors = ['#38bdf8', '#34d399', '#f472b6', '#a78bfa', '#fbbf24'];
-
-    active.forEach((g, gIdx) => {
-      const color = colors[gIdx % colors.length];
-      if (g.trajectories) {
-        Object.entries(g.trajectories).forEach(([hubId, pts]) => {
-          if (pts && pts.length >= 2) {
-            const latLngs = pts.map(p => [p.lat, p.lng]);
-            const polyline = L.polyline(latLngs, {
-              color: color,
-              weight: 3.5,
-              opacity: 0.85,
-              dashArray: '6, 6',
-              lineJoin: 'round'
-            });
-            polyline.bindPopup(`
-              <div style="font-size: 0.8rem; line-height: 1.4;">
-                <div style="font-weight: 700; color: ${color};">Tuyến Di Chuyển: ${g.groupName}</div>
-                <div>Thiết bị Hub: <strong>${hubId}</strong></div>
-                <div>Số mốc tọa độ: <strong>${pts.length} điểm</strong></div>
-                <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">Tuyến đường chỉ hiển thị trong phiên tham quan và bị xóa sạch khi kết thúc.</div>
-              </div>
-            `);
-            trajectoriesLayerGroup.addLayer(polyline);
-          }
-        });
-      }
-    });
+    if (trajectoriesLayerGroup) {
+      trajectoriesLayerGroup.clearLayers();
+    }
   }
 
-  // Định vị toàn bộ tuyến đường di chuyển của đoàn
+  // Định vị toàn bộ các Hub của đoàn
   window.panToGroupTrajectory = (groupId) => {
-    const grp = allGroups.find(g => g.groupId === groupId);
-    if (!grp) return;
-
-    const allPts = [];
-    if (grp.trajectories) {
-      Object.values(grp.trajectories).forEach(pts => {
-        if (pts && pts.length > 0) {
-          pts.forEach(p => allPts.push([p.lat, p.lng]));
-        }
-      });
-    }
-
-    if (allPts.length >= 2) {
-      map.fitBounds(L.latLngBounds(allPts).pad(0.3));
-    } else {
-      window.fitGroupBounds(groupId);
-    }
+    window.fitGroupBounds(groupId);
   };
 
   // Định vị toàn bộ các Hub trong đoàn trên bản đồ

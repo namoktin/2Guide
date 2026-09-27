@@ -21,8 +21,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   let markerPointB = null;
   let lineAB = null;
   let simActiveVisionCone = null;
-  let walkTrailPoints = [];
-  let walkTrailLine = null;
 
   // DOM Elements
   const selectLinearHub = document.getElementById('sim-linear-hub');
@@ -108,9 +106,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       MapCommon.renderPOIs(map, json.data.pois);
       if (json.data.artifacts) {
         MapCommon.renderArtifacts(map, json.data.artifacts);
-      }
-      if (json.data.tourRoute) {
-        MapCommon.renderTourRoute(map, json.data.tourRoute);
       }
     }
   } catch (e) {
@@ -270,19 +265,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     map.setView([targetHub.lat, targetHub.lng], 19);
 
-    // Khởi tạo vệt đường đi (Trail)
-    if (walkTrailLine) {
-      map.removeLayer(walkTrailLine);
-      walkTrailLine = null;
-    }
-    walkTrailPoints = [[targetHub.lat, targetHub.lng]];
-    walkTrailLine = L.polyline(walkTrailPoints, {
-      color: '#06b6d4',
-      weight: 4,
-      opacity: 0.9,
-      dashArray: '5, 5'
-    }).addTo(map);
-
     let stepCount = 0;
 
     linearWalkInterval = setInterval(async () => {
@@ -343,12 +325,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       // 2. Cập nhật nón tầm nhìn trên bản đồ mô phỏng (Chuẩn 45 độ, 5m đồng bộ với User & Quản lý)
       simActiveVisionCone = MapCommon.renderVisionCone(map, simActiveVisionCone, targetHub.lat, targetHub.lng, targetHub.yaw, 45, 5);
-
-      // 3. Cập nhật vệt đường đi (Trail Line)
-      walkTrailPoints.push([targetHub.lat, targetHub.lng]);
-      if (walkTrailLine) {
-        walkTrailLine.setLatLngs(walkTrailPoints);
-      }
 
       // 4. Tự động lia Camera theo Hub nếu được bật
       if (chkAutoFollow && chkAutoFollow.checked) {

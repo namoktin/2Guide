@@ -21,8 +21,64 @@ document.addEventListener('DOMContentLoaded', async () => {
     return s;
   }
 
+  // ============================================================
+  // QUẢN LÝ LƯU TRỮ ĐOẠN CHAT AI VÀ ID MÁY TRÊN MÁY KHÁCH (TTL 1 TIẾNG)
+  // ============================================================
+  const CHAT_STORAGE_KEY = '2guide_ai_chat_session';
+  const CHAT_TTL_MS = 60 * 60 * 1000; // 1 tiếng = 3.600.000 ms
+
+  function getStoredChatSession() {
+    try {
+      const raw = localStorage.getItem(CHAT_STORAGE_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (!data || !data.createdAt) return null;
+      return data;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function saveChatSession(session) {
+    try {
+      localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(session));
+    } catch (e) {
+      console.warn('[TTL 1H] Lỗi lưu trữ chat session:', e);
+    }
+  }
+
   const urlParams = new URLSearchParams(window.location.search);
-  let myHubId = normalizeHubId(urlParams.get('hubId') || localStorage.getItem('2guide_current_hub_id') || 'NEU001');
+  let storedSession = getStoredChatSession();
+
+  // Kiểm tra nếu phiên lưu trữ trước đó đã quá 1 tiếng thì tự động xóa ngay khi nạp trang
+  if (storedSession && (Date.now() - storedSession.createdAt >= CHAT_TTL_MS)) {
+    console.log('[TTL 1H] Phiên chat và ID máy cũ đã hết hạn 1 tiếng -> Tự động xóa sạch.');
+    localStorage.removeItem(CHAT_STORAGE_KEY);
+    localStorage.removeItem('2guide_current_hub_id');
+    storedSession = null;
+  }
+
+  const queryHubId = urlParams.get('hubId');
+  let myHubId = normalizeHubId(
+    queryHubId ||
+    (storedSession && storedSession.hubId) ||
+    localStorage.getItem('2guide_current_hub_id') ||
+    'NEU001'
+  );
+
+  // Đảm bảo lưu ID máy vào localStorage & session
+  localStorage.setItem('2guide_current_hub_id', myHubId);
+  if (!storedSession) {
+    storedSession = {
+      createdAt: Date.now(),
+      hubId: myHubId,
+      messages: []
+    };
+    saveChatSession(storedSession);
+  } else if (queryHubId && storedSession.hubId !== myHubId) {
+    storedSession.hubId = myHubId;
+    saveChatSession(storedSession);
+  }
 
   // Khởi tạo bản đồ Leaflet
   const map = MapCommon.initMap('user-map', [20.99965, 105.84280], 18);
@@ -46,7 +102,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   let currentYaw = 0;
 
   let siteData = null;
-  let tourRouteLayer = null;
   let currentPoi = null;
   let userVisionCone = null;
 
@@ -91,6 +146,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnSendAiChat = document.getElementById('btn-send-ai-chat');
   const btnMicRecord = document.getElementById('btn-mic-record');
   const aiStatusIndicator = document.getElementById('ai-status-indicator');
+  const aiChatTtlText = document.getElementById('ai-chat-ttl-text');
+  const aiChatTtlBadge = document.getElementById('ai-chat-ttl-badge');
+  const btnClearAiChat = document.getElementById('btn-clear-ai-chat');
 
   inputMyHubId.value = myHubId;
 
@@ -112,11 +170,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Vẽ phân khu
       if (siteData.zones) {
         MapCommon.renderZones(map, siteData.zones);
-      }
-
-      // Vẽ tuyến tham quan khuyên dùng (cố định)
-      if (siteData.tourRoute) {
-        tourRouteLayer = MapCommon.renderTourRoute(map, siteData.tourRoute);
       }
 
       // Lưu ý: POI không xuất hiện trên bản đồ người dùng theo yêu cầu, nhưng vẫn lưu trong siteData để phục vụ AI
@@ -176,6 +229,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     myHubId = newId;
     inputMyHubId.value = myHubId;
     localStorage.setItem('2guide_current_hub_id', myHubId);
+
+    let session = getStoredChatSession();
+    if (!session || (Date.now() - session.createdAt >= CHAT_TTL_MS)) {
+      session = { createdAt: Date.now(), hubId: myHubId, messages: [] };
+    } else {
+      session.hubId = myHubId;
+    }
+    saveChatSession(session);
     
     // Xóa marker cũ
     Object.values(hubMarkers).forEach(m => map.removeLayer(m));
@@ -370,6 +431,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     inputAiChat.value = '';
     appendChatMessage('user', question);
+    saveChatMessageRecord('user', question);
     aiStatusIndicator.textContent = 'AI đang suy nghĩ...';
 
     const loadingBubble = appendChatMessage('ai', 'Đang kết nối kho dữ liệu thuyết minh...');
@@ -390,10 +452,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       const json = await res.json();
       if (json.success && json.data) {
         const reply = json.data.reply;
+        const metaText = `${json.data.provider || 'AI Guide'} ${json.data.nearestPoi ? `| Gần: Điểm ${json.data.nearestPoi.number}` : ''}`;
         loadingBubble.innerHTML = `
-          <div class="meta">${json.data.provider || 'AI Guide'} ${json.data.nearestPoi ? `| Gần: Điểm ${json.data.nearestPoi.number}` : ''}</div>
+          <div class="meta">${metaText}</div>
           ${reply}
         `;
+        saveChatMessageRecord('ai', reply, metaText);
         aiStatusIndicator.textContent = 'Sẵn sàng';
       } else {
         loadingBubble.textContent = json.error || 'Có lỗi xảy ra khi hỏi AI. Vui lòng thử lại!';
@@ -405,18 +469,159 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  function appendChatMessage(sender, text) {
+  function appendChatMessage(sender, text, meta = '') {
+    if (!chatMessages) return null;
     const bubble = document.createElement('div');
     bubble.className = `chat-bubble ${sender}`;
     if (sender === 'user') {
-      bubble.innerHTML = `<div class="meta">BẠN (${myHubId})</div>${text}`;
+      const displayMeta = meta || `BẠN (${myHubId})`;
+      bubble.innerHTML = `<div class="meta">${displayMeta}</div>${text}`;
     } else {
-      bubble.textContent = text;
+      if (meta) {
+        bubble.innerHTML = `<div class="meta">${meta}</div>${text}`;
+      } else {
+        bubble.textContent = text;
+      }
     }
     chatMessages.appendChild(bubble);
     chatMessages.scrollTop = chatMessages.scrollHeight;
     return bubble;
   }
+
+  // Lưu từng tin nhắn chat vào localStorage (TTL 1 tiếng)
+  function saveChatMessageRecord(sender, text, meta = '') {
+    let session = getStoredChatSession();
+    const now = Date.now();
+    if (!session || (now - session.createdAt >= CHAT_TTL_MS)) {
+      session = {
+        createdAt: now,
+        hubId: myHubId,
+        messages: []
+      };
+    }
+    session.hubId = myHubId;
+    session.messages.push({
+      sender,
+      text,
+      meta,
+      time: now
+    });
+    // Giới hạn 60 tin nhắn gần nhất để tối ưu bộ nhớ
+    if (session.messages.length > 60) {
+      session.messages = session.messages.slice(-60);
+    }
+    saveChatSession(session);
+    updateTtlDisplay();
+  }
+
+  // Tự động dọn dẹp dữ liệu chat sau 1 tiếng
+  function autoExpireChatData() {
+    console.log('[TTL 1H] Đã trôi qua 1 tiếng -> Tự động xóa dữ liệu chat trên máy khách.');
+    localStorage.removeItem(CHAT_STORAGE_KEY);
+
+    if (chatMessages) {
+      chatMessages.innerHTML = `
+        <div class="chat-bubble ai">
+          <div class="meta">AI Tour Guide</div>
+          Xin chào! Tôi là Trợ Lý Hướng Dẫn Viên AI. Bạn có thể bấm nút Micro để nói chuyện trực tiếp hoặc gõ câu hỏi, tôi sẽ thuyết minh về các địa điểm tham quan!
+        </div>
+        <div class="chat-bubble ai" style="background: rgba(148, 163, 184, 0.12); border: 1px dashed #64748b; font-size: 0.78rem; color: #94a3b8; text-align: center; margin-top: 8px;">
+          ⏱ <em>Dữ liệu đoạn chat đã được tự động xóa sau 1 tiếng theo chính sách bảo mật máy khách.</em>
+        </div>
+      `;
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    if (aiChatTtlText) aiChatTtlText.textContent = 'Đã xóa (1h)';
+    if (aiChatTtlBadge) {
+      aiChatTtlBadge.style.borderColor = '#64748b';
+      aiChatTtlBadge.style.color = '#94a3b8';
+    }
+  }
+
+  // Xóa chủ động đoạn chat theo yêu cầu người dùng
+  function manuallyClearChatData() {
+    if (!confirm('Bạn có chắc muốn xóa toàn bộ lịch sử đoạn chat AI trên thiết bị này không?')) return;
+    localStorage.removeItem(CHAT_STORAGE_KEY);
+    if (chatMessages) {
+      chatMessages.innerHTML = `
+        <div class="chat-bubble ai">
+          <div class="meta">AI Tour Guide</div>
+          Xin chào! Tôi là Trợ Lý Hướng Dẫn Viên AI. Bạn có thể bấm nút Micro để nói chuyện trực tiếp hoặc gõ câu hỏi, tôi sẽ thuyết minh về các địa điểm tham quan!
+        </div>
+      `;
+    }
+    updateTtlDisplay();
+  }
+
+  if (btnClearAiChat) {
+    btnClearAiChat.addEventListener('click', manuallyClearChatData);
+  }
+
+  // Cập nhật giao diện đếm ngược thời gian lưu trữ 1 tiếng
+  function updateTtlDisplay() {
+    const session = getStoredChatSession();
+    if (!session || !session.createdAt || !session.messages || session.messages.length === 0) {
+      if (aiChatTtlText) aiChatTtlText.textContent = 'Lưu 1h';
+      if (aiChatTtlBadge) {
+        aiChatTtlBadge.style.borderColor = '#3b82f6';
+        aiChatTtlBadge.style.color = '#93c5fd';
+      }
+      return;
+    }
+
+    const elapsed = Date.now() - session.createdAt;
+    const remaining = CHAT_TTL_MS - elapsed;
+
+    if (remaining <= 0) {
+      autoExpireChatData();
+    } else {
+      const remMinutes = Math.max(1, Math.ceil(remaining / 60000));
+      if (aiChatTtlText) aiChatTtlText.textContent = `Tự xóa: ${remMinutes}p`;
+      if (aiChatTtlBadge) {
+        if (remMinutes <= 10) {
+          aiChatTtlBadge.style.borderColor = '#ef4444';
+          aiChatTtlBadge.style.color = '#f87171';
+        } else if (remMinutes <= 30) {
+          aiChatTtlBadge.style.borderColor = '#f59e0b';
+          aiChatTtlBadge.style.color = '#fbbf24';
+        } else {
+          aiChatTtlBadge.style.borderColor = '#3b82f6';
+          aiChatTtlBadge.style.color = '#93c5fd';
+        }
+      }
+    }
+  }
+
+  // Khôi phục lịch sử chat khi nạp trang
+  function initChatHistory() {
+    const session = getStoredChatSession();
+    if (!session) {
+      updateTtlDisplay();
+      return;
+    }
+
+    if (Date.now() - session.createdAt >= CHAT_TTL_MS) {
+      autoExpireChatData();
+      return;
+    }
+
+    if (Array.isArray(session.messages) && session.messages.length > 0) {
+      session.messages.forEach(msg => {
+        appendChatMessage(msg.sender, msg.text, msg.meta);
+      });
+      if (chatMessages) {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+    }
+    updateTtlDisplay();
+  }
+
+  // Quét định kỳ mỗi 20s để kích hoạt tự xóa đúng 1 tiếng
+  setInterval(updateTtlDisplay, 20000);
+
+  // Kích hoạt nạp lịch sử chat
+  initChatHistory();
 
   // MICROPHONE (VOICE STT)
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -700,12 +905,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     const userLng = myHubData.lng;
     const userYaw = (myHubData.yaw !== undefined) ? myHubData.yaw : currentYaw;
 
+    // Tìm hiện vật gần nhất trong bán kính 5m để hiển thị khoảng cách và âm lượng động realtime
+    let nearestArtifact = null;
+    let minDistance = 9999;
+    for (const art of allTargets) {
+      const sp = MapCommon.calculateSpatialParams(userLat, userLng, userYaw, art.lat, art.lng);
+      if (sp.distance < minDistance) {
+        minDistance = sp.distance;
+        nearestArtifact = art;
+      }
+    }
+
+    // Tìm hiện vật nằm trong tầm nhìn hẹp (USER_FOV_ANGLE = 45 độ, USER_FOV_DISTANCE = 5m)
     // CHỈ TÌM HIỆN VẬT NẰM TRONG TẦM NHÌN (USER_FOV_ANGLE = 45 độ, USER_FOV_DISTANCE = 5m)
     // TUYỆT ĐỐI KHÔNG kích hoạt nếu hiện vật ở gần nhưng KHÔNG nằm trong tầm nhìn!
     const inSight = allTargets.find(p => 
       MapCommon.isPointInVisionCone(userLat, userLng, userYaw, p.lat, p.lng, USER_FOV_ANGLE, USER_FOV_DISTANCE)
     );
 
+    // Cập nhật âm lượng động trên giao diện User:
+    // Nếu có hiện vật trong tầm nhìn 5m, âm lượng tự động nội suy to dần từ 30% -> 100% khi lại gần (5m -> 0.3m)
     if (inSight) {
       const spatial = MapCommon.calculateSpatialParams(userLat, userLng, userYaw, inSight.lat, inSight.lng);
       const dynVol = MapCommon.calculateDynamicVolume(userBaseVolume, spatial.distance, USER_FOV_DISTANCE, 0.3);
@@ -722,6 +941,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (hudDirection) hudDirection.textContent = `Hướng: ${dirText}`;
         if (hudActualVol) hudActualVol.textContent = `${dynVol.volumePercent}% (To hơn khi lại gần)`;
       }
+    } else {
+      if (displayMasterVol) {
+        displayMasterVol.textContent = `${userBaseVolume}%`;
+      }
+      if (spatialHud) {
+        spatialHud.style.display = 'none';
+      }
+    }
+
+    if (inSight) {
+      const spatial = MapCommon.calculateSpatialParams(userLat, userLng, userYaw, inSight.lat, inSight.lng);
+      const dynVol = MapCommon.calculateDynamicVolume(userBaseVolume, spatial.distance, USER_FOV_DISTANCE, 0.3);
 
       if (!visionTargetItem || visionTargetItem.id !== inSight.id) {
         visionTargetItem = inSight;
@@ -877,13 +1108,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             if (msg.userQuestion) {
               appendChatMessage('user', msg.userQuestion);
+              saveChatMessageRecord('user', msg.userQuestion);
             }
             if (msg.aiReply) {
-              const bubble = appendChatMessage('ai', msg.aiReply);
-              bubble.innerHTML = `
-                <div class="meta">${msg.provider || 'AI Guide (Từ Thiết Bị)'} ${msg.nearestPoi ? `| Gần: Điểm ${msg.nearestPoi.number}` : ''}</div>
-                ${msg.aiReply}
-              `;
+              const metaText = `${msg.provider || 'AI Guide (Từ Thiết Bị)'} ${msg.nearestPoi ? `| Gần: Điểm ${msg.nearestPoi.number}` : ''}`;
+              appendChatMessage('ai', msg.aiReply, metaText);
+              saveChatMessageRecord('ai', msg.aiReply, metaText);
               if (chatMessages) {
                 chatMessages.scrollTop = chatMessages.scrollHeight;
               }
@@ -901,6 +1131,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       } catch (e) {
         console.warn('Lỗi xử lý WS message:', e);
       }
+    };
+
+    ws.onclose = () => {
+      console.log('[User WS] Mất kết nối máy chủ, tự động kết nối lại sau 2s...');
+      const userLiveIndicator = document.getElementById('user-live-indicator');
+      if (userLiveIndicator) {
+        userLiveIndicator.textContent = '○ Mất kết nối';
+        userLiveIndicator.style.color = '#ef4444';
+      }
+      setTimeout(connectWebSocket, 2000);
+    };
+
+    ws.onerror = (err) => {
+      console.warn('[User WS] Lỗi kết nối WebSocket:', err);
     };
   }
 

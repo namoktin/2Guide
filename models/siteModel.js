@@ -12,6 +12,7 @@ class SiteModel {
   }
 
   getSiteData() {
+    this.siteData.tourRoute = [];
     return this.siteData;
   }
 
@@ -28,7 +29,7 @@ class SiteModel {
     if (zones) this.siteData.zones = zones;
     if (pois) this.siteData.pois = pois;
     if (artifacts) this.siteData.artifacts = artifacts;
-    if (tourRoute) this.siteData.tourRoute = tourRoute;
+    this.siteData.tourRoute = [];
 
     const fileContent = `/**
  * 2Guide - Dữ liệu thực địa: ${this.siteData.siteName || 'Khu Di Tích'}

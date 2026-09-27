@@ -15,14 +15,29 @@ const adminController = require('../controllers/adminController');
 
 const upload = require('../middlewares/uploadMiddleware');
 const { verifyEsp32Secret } = require('../middlewares/esp32AuthMiddleware');
-const { verifyAdminSecret } = require('../middlewares/adminAuthMiddleware');
+const { verifyAdminSecret, checkAdminSecretValid } = require('../middlewares/adminAuthMiddleware');
+const { verifyEditorSecret, checkEditorSecretValid } = require('../middlewares/editorAuthMiddleware');
+const { ADMIN_SECRET_PATH, EDITOR_SECRET_PATH, ADMIN_SECRET_KEY, EDITOR_SECRET_KEY } = require('../config/appConfig');
 
 // ==========================================
 // 1. DI TÍCH & BẢN ĐỒ (SITE DATA)
 // ==========================================
 router.get('/site-data', siteController.getSiteData.bind(siteController));
-// Lưu bản đồ - Yêu cầu xác thực mã bí mật Ban Quản Lý (ADMIN_SECRET_KEY)
-router.post('/editor/save', verifyAdminSecret, siteController.saveEditorData.bind(siteController));
+// Lưu bản đồ - Yêu cầu xác thực mã bí mật Map Studio (EDITOR_SECRET_KEY)
+router.post('/editor/save', verifyEditorSecret, siteController.saveEditorData.bind(siteController));
+// Xác thực key đăng nhập Map Studio Editor
+router.post('/editor/verify-key', (req, res) => {
+  const isValid = checkEditorSecretValid(req);
+  if (isValid) {
+    res.setHeader('Set-Cookie', `editor_session_key=${encodeURIComponent(EDITOR_SECRET_KEY)}; Path=/; SameSite=Lax`);
+    return res.json({ success: true, message: 'Xác thực Map Studio thành công', redirect: EDITOR_SECRET_PATH });
+  }
+  return res.status(401).json({ success: false, error: 'Mã bí mật Map Studio Editor không chính xác!' });
+});
+router.get('/editor/logout', (req, res) => {
+  res.setHeader('Set-Cookie', 'editor_session_key=; Path=/; Max-Age=0');
+  res.redirect(EDITOR_SECRET_PATH);
+});
 
 // ==========================================
 // 2. THIẾT BỊ HUB & PIN
@@ -40,12 +55,12 @@ router.post('/hubs/gaze-poi', verifyEsp32Secret, hubController.triggerPoiGaze.bi
 // ==========================================
 // 3. ĐOÀN KHÁCH & MÃ QR TOKEN DÙNG 1 LẦN
 // ==========================================
-// Danh sách đoàn khách & Mã QR - Yêu cầu xác thực mã bí mật Ban Quản Lý
-router.get('/groups', verifyAdminSecret, groupController.getAllGroups.bind(groupController));
-// Tạo đoàn mới & Kết thúc tour - Yêu cầu xác thực mã bí mật Ban Quản Lý (ADMIN_SECRET_KEY)
-router.post('/groups/create', verifyAdminSecret, groupController.createGroup.bind(groupController));
+// Danh sách đoàn khách & Mã QR
+router.get('/groups', groupController.getAllGroups.bind(groupController));
+// Tạo đoàn mới & Kết thúc tour
+router.post(['/groups', '/groups/create'], groupController.createGroup.bind(groupController));
 router.get('/groups/:identifier', groupController.getGroupDetails.bind(groupController));
-router.post('/groups/:identifier/end', verifyAdminSecret, groupController.endGroup.bind(groupController));
+router.post('/groups/:identifier/end', groupController.endGroup.bind(groupController));
 
 // ==========================================
 // 4. TRỢ LÝ AI & ÂM THANH PHẦN CỨNG
@@ -72,5 +87,18 @@ router.all('/device/verify', deviceAuthController.verifyDevice.bind(deviceAuthCo
 // ==========================================
 // Phát thanh khẩn cấp - Yêu cầu xác thực mã bí mật Ban Quản Lý (ADMIN_SECRET_KEY)
 router.post('/admin/broadcast', verifyAdminSecret, adminController.broadcastEmergency.bind(adminController));
+// Xác thực key đăng nhập Ban Quản Lý
+router.post('/admin/verify-key', (req, res) => {
+  const isValid = checkAdminSecretValid(req);
+  if (isValid) {
+    res.setHeader('Set-Cookie', `admin_session_key=${encodeURIComponent(ADMIN_SECRET_KEY)}; Path=/; SameSite=Lax`);
+    return res.json({ success: true, message: 'Xác thực Ban Quản Lý thành công', redirect: ADMIN_SECRET_PATH });
+  }
+  return res.status(401).json({ success: false, error: 'Mã bí mật Ban Quản Lý không chính xác!' });
+});
+router.get('/admin/logout', (req, res) => {
+  res.setHeader('Set-Cookie', 'admin_session_key=; Path=/; Max-Age=0');
+  res.redirect(ADMIN_SECRET_PATH);
+});
 
 module.exports = router;
