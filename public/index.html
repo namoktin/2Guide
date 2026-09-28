@@ -64,16 +64,12 @@
         </svg>
       </div>
 
-      <div class="pill-badge" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: #38bdf8; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 20px; padding: 4px 12px; margin-bottom: 12px;">
-        <span class="dot-live" style="width: 6px; height: 6px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 8px #22c55e;"></span>
-        <span>Hệ Thống Điều Hành BQL</span>
-      </div>
 
       <h2 class="auth-lock-title">Ban Quản Lý Di Tích</h2>
       <p class="auth-lock-desc">Cổng điều hành thực địa trung tâm. Vui lòng xác thực mã bảo mật Ban Quản Lý để mở quyền giám sát thời gian thực.</p>
       
       <div class="auth-form-group">
-        <label for="input-admin-auth-key" class="auth-label">Mã Bí Mật Quản Trị (Admin Secret Key)</label>
+        <label for="input-admin-auth-key" class="auth-label">Mã Bí Mật Quản Trị </label>
         <div style="position: relative; display: flex; align-items: center;">
           <span style="position: absolute; left: 14px; color: #64748b; display: flex; align-items: center; pointer-events: none;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -138,10 +134,10 @@
       
       <!-- CÁC TAB ĐIỀU KHIỂN CHỨC NĂNG -->
       <div class="sidebar-tabs">
-        <button class="tab-item active" data-tab="tab-qr">Gom Nhóm Hub</button>
+        <button class="tab-item active" data-tab="tab-qr">Tạo Nhóm Hub</button>
         <button class="tab-item" data-tab="tab-groups">Đoàn Đang Hoạt Động</button>
         <button class="tab-item" data-tab="tab-hubs">Quản Lý Hub</button>
-        <button class="tab-item" data-tab="tab-voice">Phát Thanh / Can Thiệp</button>
+        <button class="tab-item" data-tab="tab-voice">Phát Thanh</button>
       </div>
 
       <div class="sidebar-content">
@@ -234,7 +230,7 @@
         <div id="tab-voice" class="tab-panel">
           <div class="card-section">
             <div class="section-header">
-              <span>Can Thiệp Luồng Tín Hiệu & Phát Thanh</span>
+              <span>Phát Thanh </span>
             </div>
 
             <p style="font-size: 0.78rem; color: var(--text-dim); margin-bottom: 12px;">
@@ -294,15 +290,7 @@
           <label for="chk-toggle-artifacts" style="cursor: pointer; font-weight: 700; color: #f59e0b;">Hiện Vật Lịch Sử</label>
         </div>
 
-        <div class="floating-switch-group">
-          <input type="checkbox" id="chk-toggle-route" checked />
-          <label for="chk-toggle-route" style="cursor: pointer;">Tuyến Tham Quan</label>
-        </div>
-
-        <div class="floating-switch-group">
-          <input type="checkbox" id="chk-toggle-trajectories" checked />
-          <label for="chk-toggle-trajectories" style="cursor: pointer; color: #38bdf8; font-weight: 700;">Tuyến Đi Của Đoàn (Phiên Này)</label>
-        </div>
+        
       </div>
     </section>
 
