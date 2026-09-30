@@ -47,8 +47,17 @@ socketManager.init(server, { hubModel, groupModel, siteModel });
 // 4. Định tuyến toàn bộ Views và REST APIs (Master Router)
 app.use(routes);
 
-// 5. Phục vụ tài nguyên tĩnh (Static Assets: css, js, images) - index: false để kiểm soát views qua ViewController
-app.use(express.static(path.join(__dirname, 'public'), { index: false }));
+// 5. Phục vụ tài nguyên tĩnh (Static Assets: css, js, images) - Tự động vô hiệu hóa cache cho JS/CSS để luôn cập nhật tức thì
+app.use(express.static(path.join(__dirname, 'public'), {
+  index: false,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.js') || filePath.endsWith('.css') || filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
 
 // 6. Khởi động máy chủ HTTP & WebSocket
 server.listen(PORT, async () => {

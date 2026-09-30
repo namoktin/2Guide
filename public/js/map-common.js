@@ -418,6 +418,7 @@ const MapCommon = {
         </div>
         <div>Mã Thiết Bị: <strong>${hubId}</strong></div>
         <div>Dung lượng pin: <strong>${battery !== undefined ? battery + '%' : '---'}</strong></div>
+        <div style="margin-top: 2px;">Hướng nhìn: <strong style="color: #fbbf24;">${Math.round(((Number(yaw) || 0) % 360 + 360) % 360)}°</strong></div>
         ${clusterNote}
       </div>
     `;
@@ -426,9 +427,12 @@ const MapCommon = {
 
     // Gắn sự kiện khi click marker (dùng cho Admin để hiển thị nón góc nhìn)
     markerMap[hubId].off('click');
-    markerMap[hubId].on('click', () => {
+    markerMap[hubId].on('click', (e) => {
+      try {
+        markerMap[hubId].openPopup();
+      } catch (err) {}
       if (onMarkerClick) {
-        onMarkerClick(hub);
+        onMarkerClick(hub, e);
       }
     });
 
@@ -436,66 +440,107 @@ const MapCommon = {
   },
 
   // 7. VẼ & XOAY NÓN TẦM NHÌN (FOV VISION CONE TRÊN BẢN ĐỒ 2D)
-  // Hiển thị tầm nhìn của du khách theo góc Yaw (0° - 360°)
-  renderVisionCone(map, currentConeObj, lat, lng, yaw = 0, fovAngle = 45, distanceMeters = 5) {
+  // Chuẩn 5m, góc mở 45°, màu vàng hổ phách sáng (#fbbf24) viền và nền vàng ấm (#f59e0b)
+  createVisionCone(map, lat, lng, yaw = 0, distanceMeters = 5, fovAngle = 45, options = {}) {
+    let dist = distanceMeters;
+    let fov = fovAngle;
+    if (dist > fov && fov <= 20) {
+      fov = distanceMeters;
+      dist = fovAngle;
+    }
+    return this.renderVisionCone(map, null, lat, lng, yaw, fov, dist, options);
+  },
+
+  renderVisionCone(map, currentConeObj, lat, lng, yaw = 0, fovAngle = 45, distanceMeters = 5, options = {}) {
+    const cLat = parseFloat(lat);
+    const cLng = parseFloat(lng);
+    const cYaw = parseFloat(yaw) || 0;
+    const cFov = parseFloat(fovAngle) || 45;
+    const cDist = parseFloat(distanceMeters) || 5;
+
     const METERS_PER_DEG_LAT = 111000;
-    const radCenter = (lat * Math.PI) / 180;
+    const radCenter = (cLat * Math.PI) / 180;
     const METERS_PER_DEG_LNG = METERS_PER_DEG_LAT * Math.cos(radCenter);
 
-    // Tính mảng tọa độ hình quạt nón tầm nhìn
-    const points = [[lat, lng]]; // Đỉnh nón tại vị trí du khách
-    const halfFov = fovAngle / 2;
-    const segments = 16; // Số đoạn cong của hình quạt
+    const calcPoints = (targetLat, targetLng, targetYaw, targetFov, targetDist) => {
+      const pLat = parseFloat(targetLat);
+      const pLng = parseFloat(targetLng);
+      const pYaw = parseFloat(targetYaw) || 0;
+      const pFov = parseFloat(targetFov) || 45;
+      const pDist = parseFloat(targetDist) || 5;
 
-    for (let i = 0; i <= segments; i++) {
-      // Góc theo hệ tọa độ la bàn (0 = Bắc = +y, 90 = Đông = +x, 180 = Nam, 270 = Tây)
-      const currentAngleDeg = (yaw - halfFov) + (fovAngle * i / segments);
-      const rad = (currentAngleDeg * Math.PI) / 180;
+      const pRadCenter = (pLat * Math.PI) / 180;
+      const degLng = METERS_PER_DEG_LAT * Math.cos(pRadCenter);
 
-      // Trong Leaflet: Lat là trục Y (Bắc +), Lng là trục X (Đông +)
-      const dLat = (distanceMeters * Math.cos(rad)) / METERS_PER_DEG_LAT;
-      const dLng = (distanceMeters * Math.sin(rad)) / METERS_PER_DEG_LNG;
+      const pts = [[pLat, pLng]];
+      const halfFov = pFov / 2;
+      const segments = 16;
 
-      points.push([lat + dLat, lng + dLng]);
-    }
-    points.push([lat, lng]); // Đóng kín đa giác hình quạt
-
-    // Tính điểm mút của đường ngắm tia tâm (sightline)
-    const centerRad = (yaw * Math.PI) / 180;
-    const sightLat = lat + (distanceMeters * Math.cos(centerRad)) / METERS_PER_DEG_LAT;
-    const sightLng = lng + (distanceMeters * Math.sin(centerRad)) / METERS_PER_DEG_LNG;
-    const sightPoints = [[lat, lng], [sightLat, sightLng]];
-
-    if (currentConeObj && currentConeObj.conePolygon) {
-      currentConeObj.conePolygon.setLatLngs(points);
-      if (currentConeObj.sightLine) {
-        map.removeLayer(currentConeObj.sightLine);
-        currentConeObj.sightLine = null;
+      for (let i = 0; i <= segments; i++) {
+        const currentAngleDeg = (pYaw - halfFov) + (pFov * i / segments);
+        const rad = (currentAngleDeg * Math.PI) / 180;
+        const dLat = (pDist * Math.cos(rad)) / METERS_PER_DEG_LAT;
+        const dLng = (pDist * Math.sin(rad)) / degLng;
+        pts.push([pLat + dLat, pLng + dLng]);
       }
+      pts.push([pLat, pLng]);
+      return pts;
+    };
+
+    const points = calcPoints(cLat, cLng, cYaw, cFov, cDist);
+
+    if (currentConeObj && currentConeObj.conePolygon && map && map.hasLayer(currentConeObj.conePolygon)) {
+      currentConeObj.conePolygon.setLatLngs(points);
+      currentConeObj.lat = cLat;
+      currentConeObj.lng = cLng;
+      currentConeObj.yaw = cYaw;
       return currentConeObj;
     }
 
-    // Nếu chưa tạo, tạo mới polygon nón tầm nhìn (không vẽ tia ngắm polyline)
-    const conePolygon = L.polygon(points, {
-      color: '#fbbf24',       // Viền vàng hổ phách sáng
-      weight: 1.5,
-      opacity: 0.85,
-      fillColor: '#f59e0b',   // Nền vàng ấm
-      fillOpacity: 0.22,
+    const polyOptions = {
+      color: (options && options.color) || '#fbbf24',
+      weight: (options && options.weight) !== undefined ? options.weight : 1.5,
+      opacity: (options && options.opacity) !== undefined ? options.opacity : 0.85,
+      fillColor: (options && options.fillColor) || '#f59e0b',
+      fillOpacity: (options && options.fillOpacity) !== undefined ? options.fillOpacity : 0.22,
       interactive: false
-    }).addTo(map);
+    };
 
-    return {
+    const conePolygon = L.polygon(points, polyOptions).addTo(map);
+
+    try {
+      if (conePolygon.bringToFront) conePolygon.bringToFront();
+    } catch (e) {}
+
+    const coneObj = {
       conePolygon,
       sightLine: null,
-      setVision(newLat, newLng, newYaw) {
-        return MapCommon.renderVisionCone(map, this, newLat, newLng, newYaw, fovAngle, distanceMeters);
+      lat: cLat,
+      lng: cLng,
+      yaw: cYaw,
+      fovAngle: cFov,
+      distanceMeters: cDist,
+      setVision(newLat, newLng, newYaw, newFov, newDist) {
+        const f = (newFov !== undefined) ? newFov : this.fovAngle;
+        const d = (newDist !== undefined) ? newDist : this.distanceMeters;
+        const newPts = calcPoints(newLat, newLng, newYaw, f, d);
+        if (this.conePolygon && map && map.hasLayer(this.conePolygon)) {
+          this.conePolygon.setLatLngs(newPts);
+        }
+        this.lat = newLat;
+        this.lng = newLng;
+        this.yaw = newYaw;
+        return this;
       },
       remove() {
-        if (this.conePolygon) map.removeLayer(this.conePolygon);
-        if (this.sightLine) map.removeLayer(this.sightLine);
+        if (this.conePolygon && map && map.hasLayer(this.conePolygon)) {
+          map.removeLayer(this.conePolygon);
+        }
+        this.conePolygon = null;
       }
     };
+
+    return coneObj;
   },
 
   // 7.1 KIỂM TRA ĐIỂM CÓ NẰM TRONG NÓN TẦM NHÌN (VISION CONE FOV) HAY KHÔNG

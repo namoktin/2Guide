@@ -13,18 +13,18 @@ const { ADMIN_SECRET_PATH, EDITOR_SECRET_PATH } = require('../config/appConfig')
 router.get('/user.html', viewController.redirectUserHtml);
 router.get('/user', viewController.renderUser);
 
-// 2. Cổng quản lý Ban Quản Lý: CHỈ DUY NHẤT 1 ĐƯỜNG DẪN BÍ MẬT
+// 2. Cổng quản lý Ban Quản Lý:
 router.get(ADMIN_SECRET_PATH, viewController.renderAdmin);
-// Chặn hoàn toàn và báo lỗi 404 cho mọi đường dẫn công khai: /admin, /quanly, /index.html
-router.get(['/admin', '/quanly', '/index.html'], viewController.blockPublicAdmin);
+// Tự động chuyển hướng từ các đường dẫn quen thuộc sang Cổng Ban Quản Lý
+router.get(['/admin', '/quanly', '/index.html'], (req, res) => res.redirect(ADMIN_SECRET_PATH));
 
 // 3. Cổng giả lập tín hiệu GPS & Pin
 router.get(['/simulate', '/simulate.html'], viewController.renderSimulate);
 
-// 4. Studio Biên tập Bản đồ & Hiện vật: CHỈ DUY NHẤT 1 ĐƯỜNG DẪN BÍ MẬT
+// 4. Studio Biên tập Bản đồ & Hiện vật:
 router.get(EDITOR_SECRET_PATH, viewController.renderEditor);
-// Chặn hoàn toàn và báo lỗi 404 cho mọi đường dẫn công khai: /editor, /editor.html
-router.get(['/editor', '/editor.html'], viewController.blockPublicEditor);
+// Tự động chuyển hướng sang Cổng Studio Biên Tập
+router.get(['/editor', '/editor.html'], (req, res) => res.redirect(EDITOR_SECRET_PATH));
 
 // 5. Trang chủ mặc định chuyển hướng sang /user
 router.get('/', viewController.redirectRoot);

@@ -239,6 +239,9 @@ async function initAdminDashboard(secretKey) {
             MapCommon.updateHubMarker(map, hubMarkers, hub, false, (h) => {
               showHubVisionConeOnAdmin(h);
             });
+            if (activeVisionHubId === hub.hubId) {
+              showHubVisionConeOnAdmin(hub);
+            }
             renderHubsList();
           }
         } else if (msg.type === 'GROUP_CREATED') {
@@ -282,19 +285,25 @@ async function initAdminDashboard(secretKey) {
     };
   }
 
-  // Vẽ hình quạt tầm nhìn IMU
+  // Vẽ hình quạt tầm nhìn IMU chuẩn 5m, 45 độ đồng bộ hoàn toàn với User (giảm kích thước vừa vặn)
   function showHubVisionConeOnAdmin(hub) {
-    if (adminActiveVisionCone) {
-      adminActiveVisionCone.remove();
-      adminActiveVisionCone = null;
-    }
-    adminActiveVisionCone = MapCommon.createVisionCone(map, hub.lat, hub.lng, hub.yaw || 0, 22, 65, {
-      color: '#38bdf8',
-      fillColor: '#38bdf8',
-      fillOpacity: 0.28,
-      weight: 1.5,
-      dashArray: '3, 3'
-    });
+    if (!hub || hub.lat === undefined || hub.lng === undefined) return;
+    activeVisionHubId = hub.hubId;
+    adminActiveVisionCone = MapCommon.renderVisionCone(
+      map,
+      adminActiveVisionCone,
+      hub.lat,
+      hub.lng,
+      hub.yaw || 0,
+      45, // fovAngle: 45 độ
+      5,  // distanceMeters: 5m (giảm kích thước vừa vặn chuẩn như User)
+      {
+        color: '#fbbf24',
+        fillColor: '#f59e0b',
+        fillOpacity: 0.25,
+        weight: 1.5
+      }
+    );
   }
 
   function renderAllHubsOnMap() {
